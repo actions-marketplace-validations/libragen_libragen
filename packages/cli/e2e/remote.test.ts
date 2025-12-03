@@ -172,10 +172,10 @@ describe('E2E: Remote Git Sources', () => {
 
          expect(exitCode).toBe(0);
 
-         const data = parseJson<{ stats: { chunks: number; sources: number } }>(stdout);
+         const data = parseJson<{ metadata: { stats: { chunkCount: number; sourceCount: number } } }>(stdout);
 
          // Should have some chunks from the lib folder
-         expect(data.stats.chunks).toBeGreaterThan(0);
+         expect(data.metadata.stats.chunkCount).toBeGreaterThan(0);
       });
    });
 
