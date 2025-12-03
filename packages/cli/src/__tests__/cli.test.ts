@@ -139,6 +139,8 @@ describe('CLI', () => {
          expect(exitCode).toBe(0);
          expect(stdout).toContain('Search a .libragen library');
          expect(stdout).toContain('--library');
+         expect(stdout).toContain('--path');
+         expect(stdout).toContain('name resolution');
       });
 
       it('searches library and returns results', async () => {
@@ -193,6 +195,107 @@ describe('CLI', () => {
          expect(exitCode).toBe(1);
          expect(stderr).toContain('Error');
       });
+
+      it('queries library by name using resolution', async () => {
+         // Install the library first
+         const projectDir = path.join(tempDir, 'query-name-test');
+         const libDir = path.join(projectDir, 'libs');
+
+         await fs.mkdir(libDir, { recursive: true });
+
+         await runCli([
+            'install',
+            libraryPath,
+            '-p', libDir,
+         ]);
+
+         // List to see what name was installed
+         const listResult = await runCli([
+            'list',
+            '-p', libDir,
+            '--json',
+         ]);
+
+         const listData = JSON.parse(listResult.stdout);
+         const installedName = listData.libraries[0]?.name;
+
+         // Query by library name (not path)
+         const { stdout, exitCode } = await runCli([
+            'query',
+            'factorial',
+            '-l', installedName, // use the actual installed name
+            '-p', libDir,
+            '-k', '2',
+         ]);
+
+         expect(exitCode).toBe(0);
+         // The query should find results (proving name resolution worked)
+         expect(stdout).toContain('Found');
+         expect(stdout).toContain('results');
+      }, 60000);
+
+      it('fails for non-existent library name', async () => {
+         const projectDir = path.join(tempDir, 'query-name-fail-test');
+         const libDir = path.join(projectDir, 'libs');
+
+         await fs.mkdir(libDir, { recursive: true });
+
+         const { stderr, exitCode } = await runCli([
+            'query',
+            'test',
+            '-l', 'nonexistent-library',
+            '-p', libDir,
+         ]);
+
+         expect(exitCode).toBe(1);
+         expect(stderr).toContain('not installed');
+      });
+
+      it('queries library by name with JSON output', async () => {
+         // Install the library first
+         const projectDir = path.join(tempDir, 'query-name-json-test');
+         const libDir = path.join(projectDir, 'libs');
+
+         await fs.mkdir(libDir, { recursive: true });
+
+         await runCli([
+            'install',
+            libraryPath,
+            '-p', libDir,
+         ]);
+
+         // List to get the installed name
+         const listResult = await runCli([
+            'list',
+            '-p', libDir,
+            '--json',
+         ]);
+
+         const listData = JSON.parse(listResult.stdout);
+         const installedName = listData.libraries[0]?.name;
+
+         // Query by library name with JSON output
+         const { stdout, exitCode } = await runCli([
+            'query',
+            'factorial',
+            '-l', installedName,
+            '-p', libDir,
+            '-k', '2',
+            '--json',
+         ]);
+
+         expect(exitCode).toBe(0);
+
+         const results = JSON.parse(stdout);
+
+         expect(Array.isArray(results)).toBe(true);
+         expect(results.length).toBeLessThanOrEqual(2);
+
+         if (results.length > 0) {
+            expect(results[0]).toHaveProperty('content');
+            expect(results[0]).toHaveProperty('score');
+         }
+      }, 60000);
    });
 
    describe('list command', () => {

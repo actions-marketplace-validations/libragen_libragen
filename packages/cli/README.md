@@ -155,7 +155,8 @@ libragen q <query> [options]
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-l, --library <path>` | Library file to search (required) | — |
+| `-l, --library <name-or-path>` | Library name or path to .libragen file (required) | — |
+| `-p, --path <paths...>` | Library path(s) for name resolution | auto-detect + global |
 | `-k, --top-k <number>` | Number of results | `5` |
 | `-r, --rerank` | Enable cross-encoder reranking | `false` |
 | `-c, --context <lines>` | Lines of context around matches | `0` |
@@ -164,14 +165,17 @@ libragen q <query> [options]
 **Examples:**
 
 ```bash
-# Basic search
-libragen query "authentication middleware" -l my-lib.libragen
+# Search by library name (uses resolution algorithm)
+libragen query "authentication middleware" -l my-lib
 
-# Search with reranking and context
-libragen query "error handling" -l my-lib.libragen -r -c 3 -k 10
+# Search by explicit file path
+libragen query "authentication middleware" -l ./my-lib.libragen
+
+# Search with custom library paths
+libragen query "error handling" -l my-lib -p .libragen/libraries -k 10
 
 # JSON output for scripting
-libragen query "database connection" -l my-lib.libragen --json
+libragen query "database connection" -l my-lib --json
 ```
 
 ### `inspect`

@@ -9,10 +9,11 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import ora from 'ora';
 import chalk from 'chalk';
-import { Embedder, VectorStore, Searcher } from '@libragen/core';
+import { Embedder, VectorStore, Searcher, LibraryManager } from '@libragen/core';
 
 interface QueryOptions {
    library: string;
+   path?: string[];
    k?: string;
    hybridAlpha?: string;
    json?: boolean;
@@ -21,11 +22,20 @@ interface QueryOptions {
    contextAfter?: string;
 }
 
+/**
+ * Determine if a value looks like a file path vs a library name.
+ * A path contains path separators or ends with .libragen.
+ */
+function isFilePath(value: string): boolean {
+   return value.includes('/') || value.includes('\\') || value.endsWith('.libragen');
+}
+
 export const queryCommand = new Command('query')
    .alias('q')
    .description('Search a .libragen library')
    .argument('<query>', 'Search query')
-   .requiredOption('-l, --library <path>', 'Path to the .libragen library file')
+   .requiredOption('-l, --library <name-or-path>', 'Library name or path to .libragen file')
+   .option('-p, --path <paths...>', 'Library path(s) to use for name resolution (excludes global and auto-detection)')
    .option('-k <number>', 'Number of results to return', '5')
    .option('--hybrid-alpha <number>', 'Balance between vector (1) and keyword (0) search', '0.5')
    .option('--content-version <version>', 'Filter by content version')
@@ -36,14 +46,44 @@ export const queryCommand = new Command('query')
       const spinner = ora();
 
       try {
-         const libraryPath = path.resolve(options.library);
+         let libraryPath: string;
 
-         // Check library exists
-         try {
-            await fs.access(libraryPath);
-         } catch(_e) {
-            console.error(chalk.red(`Error: Library not found: ${libraryPath}`));
-            process.exit(1);
+         if (isFilePath(options.library)) {
+            // Treat as a file path
+            libraryPath = path.resolve(options.library);
+
+            try {
+               await fs.access(libraryPath);
+            } catch(_e) {
+               console.error(chalk.red(`Error: Library not found: ${libraryPath}`));
+               process.exit(1);
+            }
+         } else {
+            // Treat as a library name - use LibraryManager to resolve
+            if (!options.json) {
+               spinner.start(`Resolving library '${options.library}'...`);
+            }
+
+            const manager = new LibraryManager(
+               options.path ? { paths: options.path } : undefined
+            );
+
+            const installed = await manager.find(options.library);
+
+            if (!installed) {
+               if (!options.json) {
+                  spinner.fail(`Library '${options.library}' not found`);
+               }
+               console.error(chalk.red(`\nError: Library '${options.library}' is not installed.`));
+               console.error(chalk.dim('Use `libragen list` to see installed libraries.'));
+               process.exit(1);
+            }
+
+            libraryPath = installed.path;
+
+            if (!options.json) {
+               spinner.succeed(`Found library at ${chalk.dim(libraryPath)}`);
+            }
          }
 
          if (!options.json) {

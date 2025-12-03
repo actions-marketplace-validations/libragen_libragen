@@ -113,16 +113,32 @@ libragen query [options] <query>
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `--library`, `-l` | string | Required | Library name or path |
+| `--library`, `-l` | string | Required | Library name or path to .libragen file |
+| `--path`, `-p` | string[] | auto-detect + global | Library path(s) for name resolution |
 | `--top-k`, `-k` | number | `10` | Number of results to return |
 | `--content-version` | string | — | Filter by content version |
 | `--format`, `-f` | string | `text` | Output format (`text`, `json`) |
 
+The `-l` option accepts either:
+- A **library name** (e.g., `my-lib`) — resolved using the library discovery algorithm
+- A **file path** (e.g., `./my-lib.libragen`) — used directly
+
+When using a library name, the resolution algorithm searches:
+1. Project-local directories (`.libragen/libraries/` in cwd)
+2. Global library directory (`~/.libragen/libraries/`)
+3. Any paths specified with `-p`
+
 #### Examples
 
 ```bash
-# Basic query
+# Query by library name (uses resolution algorithm)
 libragen query --library my-docs "How do I authenticate?"
+
+# Query by explicit file path
+libragen query -l ./my-docs.libragen "How do I authenticate?"
+
+# Query with custom library paths
+libragen query -l my-docs -p .libragen/libraries "error handling"
 
 # Get more results as JSON
 libragen query -l my-docs -k 20 -f json "error handling"
