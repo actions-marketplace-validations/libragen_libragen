@@ -65,7 +65,7 @@ See [install-mcp documentation](https://www.npmjs.com/package/install-mcp) for c
 
 ## Available Tools
 
-The MCP server provides 7 tools for managing and querying libraries:
+The MCP server provides 8 tools for managing and querying libraries:
 
 ### `libragen_search`
 
@@ -167,6 +167,20 @@ Create a collection file that bundles multiple libraries together.
 
 **Example prompt:**
 > "Create a collection called team-docs with my api-docs and guides libraries"
+
+### `libragen_config`
+
+Get libragen configuration including paths, version, and discovered project directories.
+
+**Returns:**
+- `version` - libragen version
+- `paths` - Default paths (home, libraries, models)
+- `discoveredPaths` - All library paths being searched (includes project-local)
+- `pathsInitialized` - Whether paths have been discovered from workspace roots
+- `environment` - Active environment variable overrides
+
+**Example prompt:**
+> "Show me the libragen configuration and where libraries are stored"
 
 ## Custom Library Directory
 

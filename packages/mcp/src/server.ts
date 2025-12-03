@@ -13,6 +13,7 @@ import { registerUninstallTool } from './tools/uninstall.ts';
 import { registerUpdateTool } from './tools/update.ts';
 import { registerBuildTool } from './tools/build.ts';
 import { registerCollectionTool } from './tools/collection.ts';
+import { registerConfigTool } from './tools/config.ts';
 import { registerPrompts } from './prompts/index.ts';
 
 export interface ServerConfig {
@@ -104,6 +105,7 @@ export function createServer(config: ServerConfig = {}): McpServer {
    registerUninstallTool(server);
    registerUpdateTool(server);
    registerCollectionTool(server);
+   registerConfigTool(server);
 
    // Register prompts (slash commands)
    registerPrompts(server);

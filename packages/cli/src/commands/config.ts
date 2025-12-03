@@ -10,6 +10,8 @@ import {
    getLibragenHome,
    getDefaultLibraryDir,
    getModelCacheDir,
+   detectProjectLibraryDir,
+   hasProjectLibraryDir,
    VERSION,
 } from '@libragen/core';
 
@@ -20,7 +22,7 @@ interface ConfigOptions {
 export const configCommand = new Command('config')
    .description('Display current libragen configuration and paths')
    .option('--json', 'Output as JSON')
-   .action((options: ConfigOptions) => {
+   .action(async (options: ConfigOptions) => {
       const home = getLibragenHome(),
             libraryDir = getDefaultLibraryDir(),
             modelCacheDir = getModelCacheDir();
@@ -29,6 +31,18 @@ export const configCommand = new Command('config')
       const homeFromEnv = !!process.env.LIBRAGEN_HOME,
             modelCacheFromEnv = !!process.env.LIBRAGEN_MODEL_CACHE;
 
+      // Check for project-local .libragen/libraries
+      const projectLibDir = detectProjectLibraryDir(),
+            hasProjectLib = projectLibDir ? await hasProjectLibraryDir() : false;
+
+      // Build list of active library paths (in priority order)
+      const activePaths: Array<{ path: string; type: 'project' | 'global' }> = [];
+
+      if (hasProjectLib && projectLibDir) {
+         activePaths.push({ path: projectLibDir, type: 'project' });
+      }
+      activePaths.push({ path: libraryDir, type: 'global' });
+
       const config = {
          version: VERSION,
          paths: {
@@ -36,6 +50,8 @@ export const configCommand = new Command('config')
             libraries: libraryDir,
             models: modelCacheDir,
          },
+         activePaths: activePaths.map((p) => { return p.path; }),
+         projectLibraryDir: hasProjectLib ? projectLibDir : null,
          environment: {
             LIBRAGEN_HOME: process.env.LIBRAGEN_HOME || null,
             LIBRAGEN_MODEL_CACHE: process.env.LIBRAGEN_MODEL_CACHE || null,
@@ -55,6 +71,19 @@ export const configCommand = new Command('config')
       console.log(`    ${chalk.dim('Libraries:')}  ${libraryDir}`);
       // eslint-disable-next-line max-len
       console.log(`    ${chalk.dim('Models:')}     ${modelCacheDir}${modelCacheFromEnv ? chalk.yellow(' (from LIBRAGEN_MODEL_CACHE)') : ''}`);
+
+      console.log(chalk.bold('\n  Active Library Paths (in priority order):'));
+
+      for (const p of activePaths) {
+         const icon = p.type === 'project' ? '📁' : '🌐',
+               label = p.type === 'project' ? chalk.cyan('(project-local)') : chalk.dim('(global)');
+
+         console.log(`    ${icon} ${p.path} ${label}`);
+      }
+
+      if (!hasProjectLib) {
+         console.log(chalk.dim('    (no project-local .libragen/libraries found in cwd)'));
+      }
 
       console.log(chalk.bold('\n  Environment Variables:'));
 

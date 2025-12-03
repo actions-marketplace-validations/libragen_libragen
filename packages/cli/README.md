@@ -406,7 +406,7 @@ libragen up [name] [options]
 
 ### `config`
 
-Display current configuration and paths.
+Display current configuration and paths, including any project-local `.libragen/libraries` directories that would be used when querying.
 
 ```bash
 libragen config [options]
@@ -417,6 +417,12 @@ libragen config [options]
 | Option | Description |
 |--------|-------------|
 | `--json` | Output as JSON |
+
+**Output includes:**
+
+- **Paths**: Home, libraries, and models directories
+- **Active Library Paths**: All paths that will be searched (project-local + global)
+- **Environment Variables**: Any overrides via `LIBRAGEN_HOME` or `LIBRAGEN_MODEL_CACHE`
 
 ### `completions`
 

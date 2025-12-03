@@ -11,7 +11,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { FileSource } from '../../sources/files.js';
 
-// Helper to normalize paths for cross-platform comparison (convert backslashes to forward slashes)
+// Helper to normalize paths for cross-platform comparison (convert backslashes to forward
+// slashes)
 function normalizePath(p: string): string {
    return p.replace(/\\/g, '/');
 }

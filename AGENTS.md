@@ -57,6 +57,16 @@ All commands that work with installed libraries support the `-p, --path` flag:
 
 ### MCP Server (`packages/mcp/src/`)
 
+The MCP server provides 8 tools:
+1. `libragen_search` - Search libraries for relevant content
+2. `libragen_list` - List available libraries
+3. `libragen_build` - Build a library from source
+4. `libragen_install` - Install a library or collection
+5. `libragen_uninstall` - Remove an installed library
+6. `libragen_update` - Update installed libraries
+7. `libragen_collection` - Create collection files
+8. `libragen_config` - Get configuration info (paths, version, discovered directories)
+
 The MCP server discovers libraries from:
 1. Workspace roots (via MCP roots capability) - checks for `.libragen/libraries`
 2. Global directory (fallback)
@@ -64,7 +74,7 @@ The MCP server discovers libraries from:
 **Key files:**
 - `server.ts` - exports `getLibraryPaths()`, `updateLibraryPathsFromRoots()`
 - `index.ts` - calls `updateLibraryPathsFromRoots()` after connection
-- `tools/list.ts`, `tools/search.ts` - use `getLibraryPaths()` for discovery
+- `tools/*.ts` - individual tool implementations
 
 ## Documentation Locations
 

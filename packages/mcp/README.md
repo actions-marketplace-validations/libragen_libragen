@@ -218,6 +218,26 @@ Create a collection file that groups libraries together for easy installation.
 Use libragen_collection to create my-stack.json with libraries react.libragen and typescript.libragen
 ```
 
+### `libragen_config`
+
+Get libragen configuration including paths, version, and discovered project directories.
+
+**Parameters:** None
+
+**Returns:**
+
+- `version`: libragen version
+- `paths`: default paths (home, libraries, models)
+- `discoveredPaths`: all library paths being searched (includes project-local)
+- `pathsInitialized`: whether paths have been discovered from workspace roots
+- `environment`: active environment variable overrides
+
+**Example:**
+
+```
+Use libragen_config to see where libraries are stored and which paths are being searched
+```
+
 ## Prompts (Slash Commands)
 
 The server exposes prompts that appear as slash commands in MCP-compatible clients:

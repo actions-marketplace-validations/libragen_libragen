@@ -437,6 +437,35 @@ libragen config
     Libraries:  ~/Library/Application Support/libragen/libraries
     Models:     ~/Library/Application Support/libragen/models
 
+  Active Library Paths (in priority order):
+    🌐 ~/Library/Application Support/libragen/libraries (global)
+    (no project-local .libragen/libraries found in cwd)
+
+  Environment Variables:
+    (none set, using defaults)
+```
+
+With a project-local `.libragen/libraries` directory:
+
+```bash
+cd /my/project
+libragen config
+```
+
+```
+⚙️  Libragen Configuration
+
+  Version:  0.1.0
+
+  Paths:
+    Home:       ~/Library/Application Support/libragen
+    Libraries:  ~/Library/Application Support/libragen/libraries
+    Models:     ~/Library/Application Support/libragen/models
+
+  Active Library Paths (in priority order):
+    📁 /my/project/.libragen/libraries (project-local)
+    🌐 ~/Library/Application Support/libragen/libraries (global)
+
   Environment Variables:
     (none set, using defaults)
 ```
@@ -456,6 +485,10 @@ LIBRAGEN_HOME=/custom/path libragen config
     Home:       /custom/path (from LIBRAGEN_HOME)
     Libraries:  /custom/path/libraries
     Models:     /custom/path/models
+
+  Active Library Paths (in priority order):
+    🌐 /custom/path/libraries (global)
+    (no project-local .libragen/libraries found in cwd)
 
   Environment Variables:
     LIBRAGEN_HOME=/custom/path
