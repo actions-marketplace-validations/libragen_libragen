@@ -140,7 +140,8 @@ describe('E2E: Remote Git Sources', () => {
    });
 
    describe('Build with Include Filter on Remote', () => {
-      let libraryPath: string;
+      let buildSucceeded = false,
+          libraryPath: string;
 
       it.skipIf(SKIP_REMOTE)('builds with include filter', async () => {
          libraryPath = path.join(env.workDir, 'express-lib.libragen');
@@ -158,9 +159,15 @@ describe('E2E: Remote Git Sources', () => {
          }
 
          expect(exitCode).toBe(0);
+         buildSucceeded = true;
       }, 180000);
 
       it.skipIf(SKIP_REMOTE)('library contains filtered content', async () => {
+         if (!buildSucceeded) {
+            console.warn('Skipping: previous build did not succeed');
+            return;
+         }
+
          const { exitCode, stdout } = await runCli([ 'inspect', libraryPath, '--json' ], env);
 
          expect(exitCode).toBe(0);
@@ -176,13 +183,13 @@ describe('E2E: Remote Git Sources', () => {
       let libraryPath: string;
 
       it.skipIf(SKIP_REMOTE)('builds from subdirectory path in URL', async () => {
-         libraryPath = path.join(env.workDir, 'lodash-array.libragen');
+         libraryPath = path.join(env.workDir, 'kind-of-lib.libragen');
 
-         // Build just the array methods from lodash
+         // Build from a small repo's subdirectory (kind-of has a benchmark folder)
          const { exitCode, stdout, stderr } = await runCli([
-            'build', 'https://github.com/lodash/lodash/tree/main/.internal',
+            'build', 'https://github.com/jonschlinkert/kind-of/tree/master/benchmark',
             '-o', libraryPath,
-            '-n', 'lodash-internal',
+            '-n', 'kind-of-benchmark',
             '--include', '**/*.js',
          ], env);
 
