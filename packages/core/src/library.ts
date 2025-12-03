@@ -201,7 +201,13 @@ export class Library {
       // Run migrations if needed
       const runner = new MigrationRunner();
 
-      await runner.migrate(path, store.getDatabase(), { readOnly: options.readOnly });
+      try {
+         await runner.migrate(path, store.getDatabase(), { readOnly: options.readOnly });
+      } catch(e) {
+         // Close the store if migration fails to release file handles
+         store.close();
+         throw e;
+      }
 
       const library = new Library(path, store);
 
@@ -209,6 +215,7 @@ export class Library {
       library._metadata = store.getMetadata<LibraryMetadata>();
 
       if (!library._metadata) {
+         store.close();
          throw new Error('Invalid library file: missing metadata');
       }
 

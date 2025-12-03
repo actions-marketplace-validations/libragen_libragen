@@ -102,9 +102,14 @@ describe('E2E: Error Handling', () => {
             output: 'install-error-test.libragen',
          });
 
+         // Use a path that's invalid on all platforms (Windows drive that doesn't exist)
+         const invalidPath = process.platform === 'win32'
+            ? 'Z:\\nonexistent\\install\\path'
+            : '/nonexistent/install/path';
+
          const { exitCode, stderr } = await runCli([
             'install', libPath,
-            '-p', '/nonexistent/install/path',
+            '-p', invalidPath,
          ], env);
 
          // Should fail or warn about path

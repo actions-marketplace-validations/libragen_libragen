@@ -11,6 +11,11 @@ import * as path from 'path';
 import * as os from 'os';
 import { FileSource } from '../../sources/files.js';
 
+// Helper to normalize paths for cross-platform comparison (convert backslashes to forward slashes)
+function normalizePath(p: string): string {
+   return p.replace(/\\/g, '/');
+}
+
 describe('FileSource', () => {
    let tempDir: string,
        fileSource: FileSource;
@@ -112,7 +117,7 @@ describe('FileSource', () => {
 
          expect(files).toHaveLength(2);
          expect(files.map((f) => {
-            return f.relativePath;
+            return normalizePath(f.relativePath);
          })
             .sort())
             .toEqual([ 'src/index.ts', 'src/utils/helper.ts' ]);

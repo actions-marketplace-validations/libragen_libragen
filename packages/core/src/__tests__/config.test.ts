@@ -3,9 +3,15 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import * as path from 'path';
 
 // We need to reset modules between tests to pick up env changes
 let configModule: typeof import('../config.ts');
+
+// Helper to normalize paths for cross-platform comparison
+function normalizePath(p: string): string {
+   return p.split(path.sep).join('/');
+}
 
 describe('config', () => {
    // eslint-disable-next-line no-process-env
@@ -54,7 +60,7 @@ describe('config', () => {
          vi.resetModules();
          configModule = await import('../config.ts');
 
-         expect(configModule.getDefaultLibraryDir()).toBe('/custom/libragen/libraries');
+         expect(normalizePath(configModule.getDefaultLibraryDir())).toBe('/custom/libragen/libraries');
       });
 
       it('should end with /libraries', async () => {
@@ -101,7 +107,7 @@ describe('config', () => {
          vi.resetModules();
          configModule = await import('../config.ts');
 
-         expect(configModule.getModelCacheDir()).toBe('/custom/libragen/models');
+         expect(normalizePath(configModule.getModelCacheDir())).toBe('/custom/libragen/models');
       });
 
       it('should use LIBRAGEN_MODEL_CACHE when set', async () => {
