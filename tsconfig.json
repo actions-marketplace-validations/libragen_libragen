@@ -6,14 +6,14 @@
       "rootDir": "."
    },
    "include": [
-      "*.ts",
-      "packages/*/src/**/*.ts"
+      "*.ts"
    ],
    "exclude": [
       "node_modules",
       "dist",
       "packages/website",
-      "packages/collections-site"
+      "packages/collections-site",
+      "packages/*/dist/*"
    ],
    "references": [
       { "path": "./packages/core" },

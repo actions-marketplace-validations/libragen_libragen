@@ -13,7 +13,7 @@ echo "Site URL: $SITE_URL"
 rm -f ./dist/libragen-docs-*.libragen
 
 # Build the libragen-docs library (--output as directory uses standard filename)
-node ../cli/dist/cli.js build ./src/content/docs \
+node ../cli/dist/index.js build ./src/content/docs \
   --name libragen-docs \
   --version "$VERSION" \
   --content-version "$VERSION" \
