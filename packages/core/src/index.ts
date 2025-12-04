@@ -26,7 +26,7 @@ export type {
 // ============================================================================
 
 export { Embedder } from './embedder.ts';
-export type { EmbedderConfig, EmbedProgress, ProgressCallback, ModelLoadCallback } from './embedder.ts';
+export type { IEmbedder, EmbedderConfig, EmbedProgress, ProgressCallback, ModelLoadCallback } from './embedder.ts';
 
 export { Chunker } from './chunker.ts';
 export type { Chunk, ChunkMetadata, ChunkerConfig } from './chunker.ts';

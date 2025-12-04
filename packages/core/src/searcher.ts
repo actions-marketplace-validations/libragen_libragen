@@ -5,7 +5,7 @@
  * hybrid search (vector + BM25), and optional reranking.
  */
 
-import type { Embedder } from './embedder.ts';
+import type { IEmbedder } from './embedder.ts';
 import type { VectorStore, SearchResult, StoredChunk } from './store.ts';
 import type { Reranker } from './reranker.ts';
 
@@ -65,13 +65,13 @@ const DEFAULT_HYBRID_ALPHA = 0.5;
 
 export class Searcher {
 
-   private readonly _embedder: Embedder;
+   private readonly _embedder: IEmbedder;
    private readonly _store: VectorStore;
    private readonly _reranker: Reranker | null;
    private readonly _config: Omit<Required<SearcherConfig>, 'reranker'>;
 
    public constructor(
-      embedder: Embedder,
+      embedder: IEmbedder,
       store: VectorStore,
       config: SearcherConfig = {}
    ) {
@@ -222,7 +222,7 @@ export class Searcher {
    /**
     * Get the embedder instance.
     */
-   public get embedder(): Embedder {
+   public get embedder(): IEmbedder {
       return this._embedder;
    }
 

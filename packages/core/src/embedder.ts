@@ -32,13 +32,63 @@ export type ProgressCallback = (progress: EmbedProgress) => void;
 
 export type ModelLoadCallback = (info: ProgressInfo) => void;
 
+/**
+ * Interface for embedding providers.
+ * Implement this interface to provide custom embedding logic.
+ *
+ * @example
+ * ```typescript
+ * class OpenAIEmbedder implements IEmbedder {
+ *   dimensions = 1536;
+ *   async initialize() { }
+ *   async embed(text: string) { return new Float32Array(1536); }
+ *   async embedBatch(texts: string[]) { return texts.map(() => new Float32Array(1536)); }
+ *   async dispose() { }
+ * }
+ *
+ * const builder = new Builder({ embedder: new OpenAIEmbedder() });
+ * ```
+ */
+export interface IEmbedder {
+
+   /**
+    * The dimensionality of the embedding vectors.
+    */
+   readonly dimensions: number;
+
+   /**
+    * Initialize the embedder. Called before embedding operations.
+    */
+   initialize(): Promise<void>;
+
+   /**
+    * Embed a single text string.
+    * @param text - Text to embed
+    * @returns Embedding vector as Float32Array
+    */
+   embed(text: string): Promise<Float32Array>;
+
+   /**
+    * Embed multiple texts with optional progress callback.
+    * @param texts - Texts to embed
+    * @param onProgress - Optional progress callback
+    * @returns Array of embedding vectors
+    */
+   embedBatch(texts: string[], onProgress?: ProgressCallback): Promise<Float32Array[]>;
+
+   /**
+    * Clean up resources. Called when embedding is complete.
+    */
+   dispose(): Promise<void>;
+}
+
 const DEFAULT_MODEL = 'Xenova/bge-small-en-v1.5';
 
 const DEFAULT_QUANTIZATION = 'q8' as const;
 
 const DEFAULT_BATCH_SIZE = 32;
 
-export class Embedder {
+export class Embedder implements IEmbedder {
 
    private _pipeline: FeatureExtractionPipeline | null = null;
    private _initPromise: Promise<void> | null = null;

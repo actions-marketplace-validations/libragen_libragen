@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { createHash } from 'crypto';
 import { Embedder } from './embedder.ts';
+import type { IEmbedder } from './embedder.ts';
 import { Chunker } from './chunker.ts';
 import type { Chunk } from './chunker.ts';
 import { VectorStore } from './store.ts';
@@ -171,8 +172,19 @@ export type BuildProgressCallback = (progress: BuildProgress) => void;
  */
 export interface BuilderConfig {
 
-   /** Custom embedder instance (for testing or custom models) */
-   embedder?: Embedder;
+   /**
+    * Custom embedder instance.
+    * Provide your own implementation of IEmbedder to use a different embedding model
+    * or service (e.g., OpenAI, Cohere, custom local models).
+    *
+    * @example
+    * ```typescript
+    * const builder = new Builder({
+    *   embedder: new OpenAIEmbedder({ model: 'text-embedding-3-small' })
+    * });
+    * ```
+    */
+   embedder?: IEmbedder;
 }
 
 /**
@@ -548,13 +560,13 @@ export class Builder {
     * Generate embeddings for chunks.
     *
     * @param chunks - Chunks to embed
-    * @param embedder - Embedder instance
+    * @param embedder - Embedder instance (implements IEmbedder)
     * @param progress - Progress callback
     * @returns Embedding result with embeddings and timing info
     */
    protected async _generateEmbeddings(
       chunks: Chunk[],
-      embedder: Embedder,
+      embedder: IEmbedder,
       progress: BuildProgressCallback
    ): Promise<EmbeddingResult> {
       progress({

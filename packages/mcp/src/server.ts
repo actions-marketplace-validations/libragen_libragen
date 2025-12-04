@@ -6,6 +6,7 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { VERSION, Embedder, getDefaultLibraryDir, detectProjectLibraryDir, hasProjectLibraryDir } from '@libragen/core';
+import type { IEmbedder } from '@libragen/core';
 import { registerSearchTool } from './tools/search.ts';
 import { registerListTool } from './tools/list.ts';
 import { registerInstallTool } from './tools/install.ts';
@@ -22,7 +23,7 @@ export interface ServerConfig {
    librariesDir?: string;
 
    /** Pre-warmed embedder instance (for faster first query) */
-   embedder?: Embedder;
+   embedder?: IEmbedder;
 }
 
 /**
