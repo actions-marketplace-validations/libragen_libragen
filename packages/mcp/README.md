@@ -199,6 +199,11 @@ Build a .libragen library from source files, a directory, or a git repository.
 | `result` | Build output (when completed) |
 | `error` | Error message (when failed) |
 | `queuePosition` | Position in queue (when queued) |
+| `estimatedTotalSeconds` | Estimated total build time in seconds |
+| `estimatedRemainingSeconds` | Estimated seconds until completion (when running) |
+| `elapsedSeconds` | How long the build has been running (when running) |
+
+**User Feedback:** When polling for status, inform the user about progress using the timing fields. Example: "Building library... 45% complete (Generating embeddings). About 30 seconds remaining."
 
 **Examples:**
 

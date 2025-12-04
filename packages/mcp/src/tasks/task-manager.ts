@@ -45,6 +45,7 @@ export interface BuildTask {
    result?: string;
    error?: string;
    createdAt: Date;
+   startedAt?: Date;
    completedAt?: Date;
 
    /** Callback to send MCP progress notifications */
@@ -159,6 +160,7 @@ export class TaskManager {
       if (task && task.status === 'queued') {
          task.status = 'running';
          task.currentStep = 'Starting...';
+         task.startedAt = new Date();
          this._runningCount += 1;
 
          // Remove from queue

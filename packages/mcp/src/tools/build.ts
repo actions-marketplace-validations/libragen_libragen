@@ -7,6 +7,7 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { estimateEmbeddingTime } from '@libragen/core';
 import {
    getTaskManager,
    initializeWorkerPool,
@@ -25,6 +26,45 @@ export interface BuildToolConfig {
 let workerPoolInitialized = false;
 
 /**
+ * Calculate estimated time remaining based on progress and elapsed time.
+ */
+function calculateTimeEstimate(task: BuildTask, chunkCount?: number): {
+   elapsedSeconds?: number;
+   estimatedTotalSeconds: number;
+   estimatedRemainingSeconds?: number;
+} {
+   // Use system-aware estimation from core if we have chunk count
+   const baseEstimate = chunkCount
+      ? estimateEmbeddingTime(chunkCount).estimatedSeconds
+      : 60; // Default fallback
+
+   // Add overhead for non-embedding phases (~15 seconds)
+   const estimatedTotalSeconds = Math.round(baseEstimate + 15);
+
+   if (!task.startedAt) {
+      return { estimatedTotalSeconds };
+   }
+
+   const elapsedMs = Date.now() - task.startedAt.getTime(),
+         elapsedSeconds = Math.round(elapsedMs / 1000);
+
+   if (task.progress <= 0) {
+      return { elapsedSeconds, estimatedTotalSeconds };
+   }
+
+   // Calculate remaining time based on progress
+   const progressRatio = task.progress / 100,
+         elapsedBasedTotal = elapsedSeconds / progressRatio,
+         estimatedRemaining = Math.max(0, Math.round((1 - progressRatio) * elapsedBasedTotal));
+
+   return {
+      elapsedSeconds,
+      estimatedTotalSeconds: Math.round(elapsedBasedTotal),
+      estimatedRemainingSeconds: estimatedRemaining,
+   };
+}
+
+/**
  * Format a task for response.
  */
 function formatTaskResponse(task: BuildTask): {
@@ -35,6 +75,9 @@ function formatTaskResponse(task: BuildTask): {
    result?: string;
    error?: string;
    queuePosition?: number;
+   elapsedSeconds?: number;
+   estimatedTotalSeconds?: number;
+   estimatedRemainingSeconds?: number;
 } {
    const taskManager = getTaskManager(),
          queueLength = taskManager.getQueueLength();
@@ -54,6 +97,9 @@ function formatTaskResponse(task: BuildTask): {
       }) + 1;
    }
 
+   // Calculate time estimates for running tasks
+   const timeEstimate = task.status === 'running' ? calculateTimeEstimate(task) : undefined;
+
    return {
       taskId: task.id,
       status: task.status,
@@ -62,6 +108,7 @@ function formatTaskResponse(task: BuildTask): {
       result: task.result,
       error: task.error,
       queuePosition: queuePosition ?? (task.status === 'queued' ? queueLength : undefined),
+      ...timeEstimate,
    };
 }
 
@@ -87,8 +134,23 @@ ACTIONS:
 
 WORKFLOW:
 1. Call with action='start' and source to begin a build
-2. Poll with action='status' and taskId to check progress
+2. Poll with action='status' and taskId to check progress (every 3-5 seconds)
 3. When status='completed', the result contains the build output
+
+IMPORTANT - USER FEEDBACK:
+When polling for status, ALWAYS inform the user about progress. The response includes:
+- progress: percentage complete (0-100)
+- currentStep: what the build is currently doing
+- estimatedTotalSeconds: estimated total build time (~60s for typical builds)
+- estimatedRemainingSeconds: estimated seconds until completion
+- elapsedSeconds: how long the build has been running
+
+Example user updates:
+- "Building library... 20% complete (Loading embedding model). About 45 seconds remaining."
+- "Build progress: 65% - Generating embeddings (234/500 chunks). ~20 seconds left."
+- "Almost done! 95% complete - Installing library..."
+
+Builds typically take 30-90 seconds depending on content size. The embedding phase (40-85%) is the longest.
 
 USE THIS TOOL when you need to:
 - Index code, documentation, research papers, articles, or notes
@@ -215,13 +277,19 @@ The resulting library can be searched with libragen_search to find relevant cont
 
             const response = formatTaskResponse(task);
 
+            // Get system-aware time estimate (assumes ~500 chunks for unknown content)
+            const defaultEstimate = estimateEmbeddingTime(500),
+                  estimatedSeconds = Math.round(defaultEstimate.estimatedSeconds + 15);
+
             return {
                content: [
                   {
                      type: 'text' as const,
                      text: JSON.stringify({
                         ...response,
-                        message: 'Build started. Poll with action="status" to check progress.',
+                        estimatedTotalSeconds: estimatedSeconds,
+                        message: `Build started. Estimated time: ~${estimatedSeconds}s. ` +
+                           'Poll with action="status" every 3-5s and inform the user of progress.',
                      }),
                   },
                ],

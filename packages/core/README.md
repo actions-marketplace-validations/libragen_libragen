@@ -477,6 +477,37 @@ deriveGitLibraryName('https://github.com/vercel/next.js.git');  // "vercel-next.
 deriveGitLibraryName('https://github.com/microsoft/typescript'); // "microsoft-typescript"
 ```
 
+### Time Estimation
+
+Estimate embedding time based on system capabilities. Useful for providing user feedback during builds.
+
+```typescript
+import { getSystemInfo, estimateEmbeddingTime, formatSystemInfo } from '@libragen/core';
+
+// Get system information
+const info = getSystemInfo();
+console.log(info.cpuModel);      // "Apple M2 Pro"
+console.log(info.cpuCores);      // 12
+console.log(info.totalMemoryGB); // 32
+console.log(info.platform);      // "darwin"
+console.log(info.arch);          // "arm64"
+
+// Estimate time for embedding chunks
+const estimate = estimateEmbeddingTime(500);
+console.log(estimate.estimatedSeconds);  // 10
+console.log(estimate.formattedTime);     // "10s"
+console.log(estimate.chunksPerSecond);   // 50
+
+// Format system info for display
+const display = formatSystemInfo(info);
+console.log(display);  // "Apple M2 Pro (12 cores)"
+```
+
+The estimation accounts for different CPU types:
+- Apple Silicon (M1-M4): 35-55 chunks/second
+- Intel/AMD x64: 10-30 chunks/second (scales with core count)
+- ARM Linux: 8-20 chunks/second
+
 ## Library File Format
 
 A `.libragen` file is a SQLite database with the following schema:

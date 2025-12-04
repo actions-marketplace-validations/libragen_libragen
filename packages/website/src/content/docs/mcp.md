@@ -137,6 +137,9 @@ Build a searchable library from source files or git repositories.
 - `result` - Build output (when completed)
 - `error` - Error message (when failed)
 - `queuePosition` - Position in queue (when queued)
+- `estimatedTotalSeconds` - Estimated total build time (system-aware)
+- `estimatedRemainingSeconds` - Estimated seconds until completion
+- `elapsedSeconds` - How long the build has been running
 
 **Example prompts:**
 > "Build a library from https://github.com/vercel/next.js/tree/main/docs"

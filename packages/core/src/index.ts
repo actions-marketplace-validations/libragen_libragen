@@ -115,3 +115,7 @@ export type { LibraryMetadata, SourceProvenance } from './types.ts';
 
 // Utils
 export { formatBytes, deriveGitLibraryName } from './utils.ts';
+
+// Time estimation
+export { getSystemInfo, estimateEmbeddingTime, formatSystemInfo } from './time-estimate.ts';
+export type { SystemInfo, TimeEstimate } from './time-estimate.ts';

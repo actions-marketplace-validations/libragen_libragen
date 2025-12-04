@@ -23,7 +23,7 @@ import {
 } from '@libragen/core';
 import type { LibraryMetadata, SourceProvenance, GitSourceResult } from '@libragen/core';
 import { createHash } from 'crypto';
-import { estimateEmbeddingTime, formatSystemInfo } from '../time-estimate.js';
+import { estimateEmbeddingTime, formatSystemInfo } from '@libragen/core';
 
 interface BuildOptions {
    output?: string;
