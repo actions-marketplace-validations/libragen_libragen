@@ -146,11 +146,29 @@ Use libragen_update with dryRun=true to check for available updates
 
 Build a .libragen library from source files, a directory, or a git repository.
 
+**This tool uses an async pattern** to avoid timeouts on long-running builds. Builds run in worker threads (up to n-1 CPU cores) to avoid blocking the MCP server.
+
+**Actions:**
+
+| Action | Description |
+|--------|-------------|
+| `start` | Start a new build (default). Returns a `taskId` immediately. |
+| `status` | Check build progress. Requires `taskId`. |
+| `cancel` | Cancel a running or queued build. Requires `taskId`. |
+
+**Workflow:**
+
+1. Call with `action='start'` and `source` to begin a build
+2. Poll with `action='status'` and `taskId` to check progress
+3. When `status='completed'`, the `result` field contains the build output
+
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `source` | string | Yes | Source directory, file path, or git URL to index |
+| `action` | string | No | Action to perform: `start`, `status`, or `cancel` (default: `start`) |
+| `taskId` | string | For status/cancel | Task ID returned from start action |
+| `source` | string | For start | Source directory, file path, or git URL to index |
 | `output` | string | No | Output path for the .libragen file |
 | `name` | string | No | Library name (defaults to directory/file name) |
 | `version` | string | No | Library version (default: 0.1.0) |
@@ -170,20 +188,36 @@ Build a .libragen library from source files, a directory, or a git repository.
 | `gitRepoAuthToken` | string | No | Auth token for private repos (remote git sources only) |
 | `install` | boolean | No | Install the library after building (default: false) |
 
+**Response fields:**
+
+| Field | Description |
+|-------|-------------|
+| `taskId` | Unique identifier for the build task |
+| `status` | Task status: `queued`, `running`, `completed`, `failed`, `cancelled` |
+| `progress` | Progress percentage (0-100) |
+| `currentStep` | Description of current build step |
+| `result` | Build output (when completed) |
+| `error` | Error message (when failed) |
+| `queuePosition` | Position in queue (when queued) |
+
 **Examples:**
 
 ```
-# Build from local directory
-Use libragen_build to create a library from the ./src directory
+# Start a build (returns immediately with taskId)
+Use libragen_build with action="start" source="https://github.com/org/repo"
+→ { "taskId": "abc-123", "status": "queued", "message": "Build started..." }
 
-# Build from git repository
-Use libragen_build with source="https://github.com/org/repo"
+# Check progress
+Use libragen_build with action="status" taskId="abc-123"
+→ { "taskId": "abc-123", "status": "running", "progress": 45, "currentStep": "Generating embeddings..." }
 
-# Build from specific branch
-Use libragen_build with source="https://github.com/org/repo/tree/v1.0.0"
+# Get result when complete
+Use libragen_build with action="status" taskId="abc-123"
+→ { "taskId": "abc-123", "status": "completed", "progress": 100, "result": "✓ Built library: repo..." }
 
-# Build from subdirectory
-Use libragen_build with source="https://github.com/org/repo/tree/main/docs"
+# Cancel if needed
+Use libragen_build with action="cancel" taskId="abc-123"
+→ { "success": true, "message": "Build cancelled" }
 ```
 
 **Git URL formats supported:**
@@ -195,6 +229,12 @@ Use libragen_build with source="https://github.com/org/repo/tree/main/docs"
 - `https://bitbucket.org/org/repo`
 
 **Authentication:** Tokens are auto-detected from environment variables (`GITHUB_TOKEN`, `GITLAB_TOKEN`, `GL_TOKEN`, `BITBUCKET_TOKEN`) or can be passed explicitly via the `gitRepoAuthToken` parameter.
+
+**Environment Variables:**
+
+| Variable | Description |
+|----------|-------------|
+| `LIBRAGEN_TASK_EXPIRY_MS` | How long completed tasks are retained (default: 3600000 = 1 hour) |
 
 ### `libragen_collection`
 

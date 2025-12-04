@@ -60,7 +60,7 @@ All commands that work with installed libraries support the `-p, --path` flag:
 The MCP server provides 8 tools:
 1. `libragen_search` - Search libraries for relevant content
 2. `libragen_list` - List available libraries
-3. `libragen_build` - Build a library from source
+3. `libragen_build` - Build a library from source (async with worker threads)
 4. `libragen_install` - Install a library or collection
 5. `libragen_uninstall` - Remove an installed library
 6. `libragen_update` - Update installed libraries
@@ -75,6 +75,25 @@ The MCP server discovers libraries from:
 - `server.ts` - exports `getLibraryPaths()`, `updateLibraryPathsFromRoots()`
 - `index.ts` - calls `updateLibraryPathsFromRoots()` after connection
 - `tools/*.ts` - individual tool implementations
+- `tasks/` - async build task management (TaskManager, WorkerPool, build-worker)
+
+### Async Build System (`packages/mcp/src/tasks/`)
+
+The `libragen_build` tool uses an async pattern to avoid MCP timeouts:
+
+**Architecture:**
+- `task-manager.ts` - Manages build tasks with queuing and concurrency control
+- `worker-pool.ts` - Spawns and manages worker threads
+- `build-worker.ts` - Runs build operations in worker threads
+
+**How it works:**
+1. `action: 'start'` creates a task and returns a `taskId` immediately
+2. Build runs in a worker thread (up to n-1 CPU cores concurrently)
+3. `action: 'status'` returns progress, current step, and result when complete
+4. `action: 'cancel'` cancels a running or queued build
+
+**Environment variables:**
+- `LIBRAGEN_TASK_EXPIRY_MS` - How long completed tasks are retained (default: 1 hour)
 
 ## Documentation Locations
 

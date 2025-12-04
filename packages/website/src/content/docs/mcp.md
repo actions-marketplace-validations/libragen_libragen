@@ -95,8 +95,22 @@ List available libraries with metadata, descriptions, and usage guidance.
 
 Build a searchable library from source files or git repositories.
 
+**This tool uses an async pattern** to avoid timeouts on long-running builds. Builds run in worker threads (up to n-1 CPU cores) to avoid blocking the MCP server.
+
+**Actions:**
+- `start` (default) - Start a new build, returns a `taskId` immediately
+- `status` - Check build progress (requires `taskId`)
+- `cancel` - Cancel a running or queued build (requires `taskId`)
+
+**Workflow:**
+1. Call with `action='start'` and `source` to begin a build
+2. Poll with `action='status'` and `taskId` to check progress
+3. When `status='completed'`, the `result` field contains the build output
+
 **Inputs:**
-- `source` (string, required) - Directory, file path, or git URL to index
+- `action` (string, default: "start") - Action to perform: `start`, `status`, or `cancel`
+- `taskId` (string, for status/cancel) - Task ID returned from start action
+- `source` (string, for start) - Directory, file path, or git URL to index
 - `name` (string, optional) - Library name
 - `output` (string, optional) - Output path for the .libragen file
 - `version` (string, default: "0.1.0") - Library version
@@ -115,8 +129,19 @@ Build a searchable library from source files or git repositories.
 - `gitRepoAuthToken` (string, optional) - Auth token for private repos
 - `install` (boolean, default: false) - Install after building
 
-**Example prompt:**
+**Response fields:**
+- `taskId` - Unique identifier for the build task
+- `status` - Task status: `queued`, `running`, `completed`, `failed`, `cancelled`
+- `progress` - Progress percentage (0-100)
+- `currentStep` - Description of current build step
+- `result` - Build output (when completed)
+- `error` - Error message (when failed)
+- `queuePosition` - Position in queue (when queued)
+
+**Example prompts:**
 > "Build a library from https://github.com/vercel/next.js/tree/main/docs"
+
+> "Check the status of build task abc-123"
 
 ### `libragen_install`
 
