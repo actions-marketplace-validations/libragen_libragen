@@ -27,6 +27,9 @@ export interface BuildParams {
    gitRepoAuthToken?: string;
    license?: string[];
    install?: boolean;
+
+   /** Path to install the library to (used by worker thread) */
+   installPath?: string;
 }
 
 /** Build task status */

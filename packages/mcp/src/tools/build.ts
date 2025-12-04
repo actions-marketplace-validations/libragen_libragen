@@ -14,6 +14,7 @@ import {
    type BuildParams,
    type BuildTask,
 } from '../tasks/index.ts';
+import { getLibraryPaths } from '../server.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface BuildToolConfig {
@@ -178,6 +179,10 @@ The resulting library can be searched with libragen_search to find relevant cont
                };
             }
 
+            // Get install path from discovered library paths (first path is primary)
+            const libraryPaths = getLibraryPaths(),
+                  installPath = libraryPaths.length > 0 ? libraryPaths[0] : undefined;
+
             // Build params for the task
             const buildParams: BuildParams = {
                source: params.source,
@@ -200,6 +205,7 @@ The resulting library can be searched with libragen_search to find relevant cont
                gitRepoAuthToken: params.gitRepoAuthToken,
                license: params.license,
                install: params.install,
+               installPath,
             };
 
             // Create task and start processing queue

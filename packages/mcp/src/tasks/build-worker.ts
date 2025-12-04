@@ -365,8 +365,15 @@ async function executeBuild(params: BuildParams): Promise<void> {
             sendProgress('Installing library...', 95);
             checkCancelled();
 
-            const { LibraryManager } = await import('@libragen/core'),
-                  manager = new LibraryManager(),
+            const { LibraryManager } = await import('@libragen/core');
+
+            // Use explicit install path if provided (from MCP server's discovered paths)
+            // Otherwise fall back to default behavior
+            const managerOptions = params.installPath
+               ? { paths: [ params.installPath ] }
+               : undefined;
+
+            const manager = new LibraryManager(managerOptions),
                   installed = await manager.install(path.resolve(outputPath), { force: true });
 
             result += `\n\n✓ Installed to: ${installed.path}`;
