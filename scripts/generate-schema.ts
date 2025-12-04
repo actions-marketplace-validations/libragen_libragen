@@ -15,14 +15,11 @@ import { fileURLToPath } from 'url';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url)),
       rootDir = path.resolve(currentDir, '..'),
-      schemasDir = path.join(rootDir, 'schemas'),
-      coreSchemasDir = path.join(rootDir, 'packages/core/schemas');
+      schemasDir = path.join(rootDir, 'packages/core/schemas');
 
-// Ensure schemas directories exist
-for (const dir of [ schemasDir, coreSchemasDir ]) {
-   if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-   }
+// Ensure schemas directory exists
+if (!fs.existsSync(schemasDir)) {
+   fs.mkdirSync(schemasDir, { recursive: true });
 }
 
 // TypeScript compiler options
@@ -105,13 +102,11 @@ for (const config of schemas) {
 
       const schemaContent = JSON.stringify(schema, null, 2) + '\n';
 
-      // Write to both locations
-      for (const dir of [ schemasDir, coreSchemasDir ]) {
-         const outputPath = path.join(dir, config.fileName);
+      // Write to packages/core/schemas
+      const outputPath = path.join(schemasDir, config.fileName);
 
-         fs.writeFileSync(outputPath, schemaContent);
-         console.log(`✓ Generated: ${path.relative(rootDir, outputPath)}`);
-      }
+      fs.writeFileSync(outputPath, schemaContent);
+      console.log(`✓ Generated: ${path.relative(rootDir, outputPath)}`);
    } else {
       console.error(`✗ Failed to generate ${config.typeName} schema`);
       failed += 1;

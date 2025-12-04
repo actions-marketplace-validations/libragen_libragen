@@ -32,3 +32,6 @@ npm-debug.log*
 *.tmp
 *.temp
 .cache/
+
+# Generated schemas (use packages/core/schemas instead)
+/schemas/

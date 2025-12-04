@@ -6,10 +6,8 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { Embedder, VectorStore, Searcher, Reranker } from '@libragen/core';
-import type { LibraryMetadata, StoredChunk } from '@libragen/core';
-import * as path from 'path';
-import * as fs from 'fs';
+import { Embedder, VectorStore, Searcher, Reranker, LibraryManager } from '@libragen/core';
+import type { StoredChunk } from '@libragen/core';
 import type { ServerConfig } from '../server.ts';
 import { getLibraryPaths } from '../server.ts';
 
@@ -82,15 +80,17 @@ Libraries are discovered from:
          ? [ config.librariesDir ]
          : getLibraryPaths();
 
-      // Discover available libraries from all paths
-      const availableLibraries = discoverLibrariesFromPaths(libraryPaths);
+      // Use LibraryManager to discover libraries
+      const manager = new LibraryManager({ paths: libraryPaths });
+
+      const installedLibraries = await manager.listInstalled();
 
       // Filter to requested libraries if specified
       const targetLibraries = libraries
-         ? availableLibraries.filter((lib) => {
+         ? installedLibraries.filter((lib) => {
             return libraries.includes(lib.name);
          })
-         : availableLibraries;
+         : installedLibraries;
 
       if (targetLibraries.length === 0) {
          return {
@@ -170,74 +170,6 @@ Libraries are discovered from:
          }
       }
    });
-}
-
-interface LibraryInfo {
-   name: string;
-   path: string;
-}
-
-/**
- * Discover libraries from multiple paths, deduplicating by name.
- * First path has priority (project-local wins over global).
- */
-function discoverLibrariesFromPaths(libraryPaths: string[]): LibraryInfo[] {
-   const libraries: LibraryInfo[] = [],
-         seen = new Set<string>();
-
-   for (const librariesDir of libraryPaths) {
-      const libs = discoverLibraries(librariesDir);
-
-      for (const lib of libs) {
-         if (!seen.has(lib.name)) {
-            seen.add(lib.name);
-            libraries.push(lib);
-         }
-      }
-   }
-
-   return libraries;
-}
-
-function discoverLibraries(librariesDir: string): LibraryInfo[] {
-   // eslint-disable-next-line no-sync
-   if (!fs.existsSync(librariesDir)) {
-      return [];
-   }
-
-   // eslint-disable-next-line no-sync
-   const entries = fs.readdirSync(librariesDir);
-
-   const libraries: LibraryInfo[] = [];
-
-   for (const entry of entries) {
-      if (entry.endsWith('.libragen')) {
-         const libPath = path.join(librariesDir, entry);
-
-         try {
-            // Open library to read actual metadata name (not filename)
-            const store = new VectorStore(libPath);
-
-            store.initialize();
-
-            const metadata = store.getMetadata<LibraryMetadata>();
-
-            store.close();
-
-            if (metadata?.name) {
-               libraries.push({
-                  name: metadata.name,
-                  path: libPath,
-               });
-            }
-         } catch{
-            // Skip invalid library files
-            continue;
-         }
-      }
-   }
-
-   return libraries;
 }
 
 function formatResults(results: SearchResultItem[]): string {

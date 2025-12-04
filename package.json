@@ -7,7 +7,7 @@
       "packages/*"
    ],
    "scripts": {
-      "build": "tsc --build && npm run website:build && npm run collections:build",
+      "build": "npm run generate:schema && tsc --build && npm run website:build && npm run collections:build",
       "build:clean": "tsc --build --clean",
       "test": "vitest run",
       "eslint": "ESLINT_USE_FLAT_CONFIG=false eslint .",
