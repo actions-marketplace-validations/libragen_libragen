@@ -365,7 +365,7 @@ const customManager = new LibraryManager({
    paths: ['.libragen/libraries', '/shared/libs'],
 });
 
-// Install a library (to first path in the list)
+// Install a library (defaults to global directory)
 const installed = await manager.install('./lib.libragen', {
    force: true,   // Overwrite existing
 });

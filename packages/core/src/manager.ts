@@ -291,7 +291,7 @@ export class LibraryManager {
 
    /**
     * Get the path where a library would be installed.
-    * Uses the first (primary) directory in the paths list.
+    * Uses the primary install directory (defaulting to global).
     *
     * @param name - Library name
     */
@@ -317,7 +317,7 @@ export class LibraryManager {
 
    /**
     * Install a library from a file path.
-    * Installs to the first (primary) directory in the paths list.
+    * Installs to the primary directory (defaulting to global).
     *
     * @param sourcePath - Path to the .libragen file to install
     * @param options - Install options
