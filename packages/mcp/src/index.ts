@@ -7,19 +7,24 @@
  */
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createServer, warmEmbedder, updateLibraryPathsFromRoots } from './server.ts';
+import { createServer, warmEmbedder, updateServerEmbedder, updateLibraryPathsFromRoots } from './server.ts';
 
 async function main(): Promise<void> {
-   // Pre-warm the embedding model for faster first query
-   // This downloads and loads the model into memory
-   const embedder = await warmEmbedder();
-
-   const server = createServer({ embedder });
+   // Create server without embedder (lazy initialization)
+   const server = createServer();
 
    // Connect via stdio transport (standard for MCP servers)
    const transport = new StdioServerTransport();
 
    await server.connect(transport);
+
+   // Start background embedder warming after server is ready
+   // This allows the server to respond immediately while model loads in background
+   warmEmbedderWithRetry(server).catch((error) => {
+      // Log error but don't crash server - tools will create embedder on demand
+      // eslint-disable-next-line no-console
+      console.warn('Failed to warm embedder, tools will create embedder on demand:', error);
+   });
 
    // Try to get roots from the client to discover project directories
    // This enables auto-detection of .libragen/libraries in workspace roots
@@ -41,6 +46,47 @@ async function main(): Promise<void> {
       }
    } catch{
       // Client may not support roots - that's fine, we'll use defaults
+   }
+}
+
+/**
+ * Attempt to warm the embedder with retry logic.
+ * If warming fails, the server will still work but search operations
+ * may be slower on first use.
+ */
+async function warmEmbedderWithRetry(server: any, maxRetries = 3): Promise<void> {
+   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+         // eslint-disable-next-line no-console
+         console.log(`Warming embedder (attempt ${attempt}/${maxRetries})...`);
+
+         const embedder = await warmEmbedder();
+
+         // Update the server with the warmed embedder
+         updateServerEmbedder(server, embedder);
+
+         // eslint-disable-next-line no-console
+         console.log('Embedder warmed successfully');
+
+         return; // Success, exit retry loop
+      } catch(error) {
+         // eslint-disable-next-line no-console
+         console.warn(`Embedder warming failed (attempt ${attempt}/${maxRetries}):`, error);
+
+         if (attempt === maxRetries) {
+            throw new Error(`Embedder warming failed after ${maxRetries} attempts: ${error}`);
+         }
+
+         // Wait before retry (exponential backoff)
+         const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+
+         // eslint-disable-next-line no-console
+         console.log(`Retrying in ${delayMs}ms...`);
+
+         await new Promise((resolve) => {
+            setTimeout(resolve, delayMs);
+         });
+      }
    }
 }
 

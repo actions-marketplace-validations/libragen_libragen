@@ -6,7 +6,9 @@ import { VERSION } from '../index.js';
 
 // Read expected version from package.json
 const packageJsonPath = join(dirname(fileURLToPath(import.meta.url)), '../../package.json');
+
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+
 const expectedVersion = packageJson.version;
 
 describe('@libragen/core', () => {

@@ -11,7 +11,9 @@ import { dirname, join } from 'path';
 
 // Read version from package.json at runtime to ensure it stays accurate
 const packageJsonPath = join(dirname(fileURLToPath(import.meta.url)), '../package.json');
+
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+
 export const VERSION = packageJson.version;
 
 // ============================================================================
