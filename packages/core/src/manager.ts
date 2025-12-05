@@ -164,18 +164,18 @@ export class LibraryManager {
          // Default behavior: global + auto-detect project
          const paths: string[] = [];
 
-         // Global is included by default and comes FIRST (primary install location)
-         if (options?.includeGlobal !== false) {
-            paths.push(getDefaultLibraryDir());
-         }
-
-         // Auto-detect is on by default (for discovery, not primary install)
+         // Auto-detect is on by default (for discovery) -> PROJECT FIRST
          if (options?.autoDetect !== false) {
             const projectDir = detectProjectLibraryDir(options?.cwd);
 
             if (projectDir) {
                paths.push(projectDir);
             }
+         }
+
+         // Global is included by default -> GLOBAL SECOND
+         if (options?.includeGlobal !== false) {
+            paths.push(getDefaultLibraryDir());
          }
 
          this._locations = {
@@ -296,7 +296,7 @@ export class LibraryManager {
     * @param name - Library name
     */
    public getInstallPath(name: string): string {
-      const dir = this._locations.paths[0] ?? getDefaultLibraryDir();
+      const dir = this.getPrimaryDirectory();
 
       return path.join(dir, `${name}.libragen`);
    }
@@ -305,6 +305,13 @@ export class LibraryManager {
     * Get the primary install directory.
     */
    public getPrimaryDirectory(): string {
+      const globalDir = getDefaultLibraryDir();
+
+      // Prefer global directory if it's in the list
+      if (this._locations.paths.includes(globalDir)) {
+         return globalDir;
+      }
+
       return this._locations.paths[0] ?? getDefaultLibraryDir();
    }
 
@@ -326,8 +333,8 @@ export class LibraryManager {
 
       sourceLib.close();
 
-      // Determine destination (first path is primary)
-      const destDir = this._locations.paths[0] ?? getDefaultLibraryDir();
+      // Determine destination
+      const destDir = this.getPrimaryDirectory();
 
       const destFilename = metadata.version
          ? `${metadata.name}-${metadata.version}.libragen`

@@ -34,13 +34,14 @@ libragen/
 The `LibraryManager` class handles library discovery, installation, and uninstallation.
 
 **Path Discovery (IMPORTANT):**
-- Default behavior: global directory + auto-detect `.libragen/libraries` in cwd
-- Global directory is FIRST (primary install location)
-- Project-local directories are discovered for searching (but not primary install)
-- When `paths` option is provided: use ONLY those paths (no global, no auto-detection)
+- Default behavior: auto-detect `.libragen/libraries` in cwd + global directory
+- Install: Defaults to Global directory (unless `-p` is used)
+- Discovery: Project-local libraries take priority over global (first path wins)
+- When `paths` option is provided (via `-p`): use ONLY those paths (no global, no auto-detection, no transformations applied by core, but CLI applies transformation)
 
 ```typescript
-// Default: global (primary) + auto-detect project (for discovery)
+// Default: project (priority) + global
+// Install defaults to global via getPrimaryDirectory() logic
 const manager = new LibraryManager();
 
 // Explicit paths only (no global, no auto-detection)

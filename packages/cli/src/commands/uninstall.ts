@@ -22,13 +22,15 @@ export const uninstallCommand = new Command('uninstall')
    .option('-c, --collection', 'Uninstall a collection (and unreferenced libraries)')
    .action(async (name: string, options: UninstallOptions) => {
       try {
-         // If explicit paths provided, transform them to .libragen/libraries subdirectories
+         // If explicit paths provided, transform them to
+         // .libragen/libraries subdirectories
          let managerOptions: { paths: string[] } | undefined;
 
          if (options.path) {
             const transformedPaths = options.path.map((p) => {
                return path.join(p, '.libragen', 'libraries');
             });
+
             managerOptions = { paths: transformedPaths };
          }
 

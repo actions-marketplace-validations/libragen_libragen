@@ -111,8 +111,8 @@ export LIBRAGEN_HOME=/custom/path
 
 When searching for libraries (e.g., `libragen list`, `libragen query`), libragen looks in:
 
-1. **Global directory** — `$LIBRAGEN_HOME/libraries` (always included)
-2. **Project directory** — If `.libragen/libraries/` exists in the current directory, it's also searched
+1. **Project directory** — If `.libragen/libraries/` exists in the current directory, it's searched first
+2. **Global directory** — `$LIBRAGEN_HOME/libraries` (always included)
 
 ### Project-Local Libraries
 

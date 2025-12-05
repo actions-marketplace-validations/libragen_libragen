@@ -30,13 +30,15 @@ export const listCommand = new Command('list')
    .option('--collections', 'Show only collections')
    .action(async (options: ListOptions) => {
       try {
-         // If explicit paths provided, transform them to .libragen/libraries subdirectories
+         // If explicit paths provided, transform them to
+         // .libragen/libraries subdirectories
          let managerOptions: { paths: string[] } | undefined;
 
          if (options.path) {
             const transformedPaths = options.path.map((p) => {
                return path.join(p, '.libragen', 'libraries');
             });
+
             managerOptions = { paths: transformedPaths };
          }
 

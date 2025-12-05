@@ -208,8 +208,8 @@ The location badge helps identify which libraries come from project-local direct
 
 By default, libragen discovers libraries from:
 
-1. **Global directory** — `$LIBRAGEN_HOME/libraries` (platform-specific location, see below)
-2. **Project directory** — If `.libragen/libraries/` exists in the current directory, it's also searched
+1. **Project directory** — If `.libragen/libraries/` exists in the current directory, it's searched first
+2. **Global directory** — `$LIBRAGEN_HOME/libraries` (always included)
 
 When `-p` is specified, the path is transformed to `<path>/.libragen/libraries` and **only** that path is searched—no global directory, no auto-detection.
 

@@ -345,10 +345,10 @@ Each library shows:
 
 **Library Discovery:**
 
-By default, libragen searches for libraries in:
+by default, libragen discovers libraries from:
 
-1. **Global directory** — `$LIBRAGEN_HOME/libraries` (platform-specific, see below)
-2. **Project directory** (if `.libragen/libraries/` exists in cwd) — auto-detected
+1. **Project directory** — If `.libragen/libraries/` exists in the current directory, it's searched first
+2. **Global directory** — `$LIBRAGEN_HOME/libraries` (always included)
 
 When `-p` is specified, the path is transformed to `<path>/.libragen/libraries` and **only** that path is searched — no global or auto-detection.
 
@@ -544,12 +544,12 @@ Libraries are discovered and installed to different locations:
 
 You can override this with the `LIBRAGEN_HOME` environment variable.
 
-### Library Discovery (no `-p` flag)
+### Library Discovery
 
 When searching for libraries (e.g., `libragen list`, `libragen query`), libragen looks in:
 
-1. **Global directory**: `$LIBRAGEN_HOME/libraries` (always included)
-2. **Auto-detected project directory**: If `.libragen/libraries/` exists in the current working directory, it is also searched
+1. **Project directory** — If `.libragen/libraries/` exists in the current directory, it's searched first
+2. **Global directory** — `$LIBRAGEN_HOME/libraries` (always included)
 
 ### Project-Specific Libraries (`-p` flag)
 

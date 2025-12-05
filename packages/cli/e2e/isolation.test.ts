@@ -65,6 +65,7 @@ describe('E2E: Project Isolation', () => {
 
          // Verify file exists in project directory
          const libDir = getProjectLibDir(projectA);
+
          const files = await fs.readdir(libDir);
 
          expect(files.some((f) => { return f.includes('lib-a'); })).toBe(true);
@@ -80,6 +81,7 @@ describe('E2E: Project Isolation', () => {
 
          // Verify file exists in project directory
          const libDir = getProjectLibDir(projectB);
+
          const files = await fs.readdir(libDir);
 
          expect(files.some((f) => { return f.includes('lib-b'); })).toBe(true);

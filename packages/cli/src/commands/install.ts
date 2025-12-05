@@ -41,6 +41,7 @@ export const installCommand = new Command('install')
             const transformedPaths = options.path.map((p) => {
                return path.join(p, '.libragen', 'libraries');
             });
+
             managerOptions = { paths: transformedPaths };
          }
 

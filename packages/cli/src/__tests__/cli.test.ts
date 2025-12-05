@@ -398,7 +398,6 @@ describe('CLI', () => {
          // Use the library installed in the previous test
          const projectDir = path.join(tempDir, 'list-path-test');
 
-         const libDir = path.join(projectDir, 'libs');
 
          const { stdout, exitCode } = await runCli([
             'list',
