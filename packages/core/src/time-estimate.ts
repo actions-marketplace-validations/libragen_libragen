@@ -41,51 +41,142 @@ export function getSystemInfo(): SystemInfo {
  * Rates are based on batch size of 32 and typical chunk sizes (~1000 chars).
  * Estimates account for model warmup overhead on first batch.
  */
-function getBaselineChunksPerSecond(systemInfo: SystemInfo): number {
-   const { cpuModel, cpuCores, arch } = systemInfo;
 
-   // Apple Silicon (M1/M2/M3/M4) - fast due to unified memory architecture
-   if (arch === 'arm64' && systemInfo.platform === 'darwin') {
-      if (cpuModel.includes('M4')) {
-         return 55; // M4 chips
-      }
-      if (cpuModel.includes('M3')) {
-         return 50; // M3 chips
-      }
-      if (cpuModel.includes('M2')) {
-         return 45; // M2 chips
-      }
-      if (cpuModel.includes('M1')) {
-         return 35; // M1 chips
-      }
-      return 40; // Unknown Apple Silicon
-   }
+/**
+ * Performance configuration for different CPU architectures and models
+ */
+interface PerformanceConfig {
 
+   /** Function to determine if this config applies to the system */
+   matcher: (systemInfo: SystemInfo) => boolean;
+
+   /** Function to calculate chunks per second for this system */
+   calculator: (systemInfo: SystemInfo) => number;
+}
+
+/**
+ * Performance configurations in priority order (first match wins)
+ */
+const PERFORMANCE_CONFIGS: PerformanceConfig[] = [
+   // Apple Silicon M4 series
+   {
+      matcher: (info) => {
+         return info.arch === 'arm64' && info.platform === 'darwin' && info.cpuModel.includes('M4');
+      },
+      calculator: (info) => {
+         if (info.cpuCores >= 14) {
+            return 70; // M4 Pro/Max
+         }
+         if (info.cpuCores >= 10) {
+            return 65; // M4 Pro
+         }
+         return 60; // M4 base
+      },
+   },
+   // Apple Silicon M3 series
+   {
+      matcher: (info) => {
+         return info.arch === 'arm64' && info.platform === 'darwin' && info.cpuModel.includes('M3');
+      },
+      calculator: (info) => {
+         if (info.cpuCores >= 14) {
+            return 60; // M3 Pro/Max
+         }
+         if (info.cpuCores >= 11) {
+            return 55; // M3 Pro
+         }
+         return 50; // M3 base
+      },
+   },
+   // Apple Silicon M2 series
+   {
+      matcher: (info) => {
+         return info.arch === 'arm64' && info.platform === 'darwin' && info.cpuModel.includes('M2');
+      },
+      calculator: (info) => {
+         if (info.cpuCores >= 12) {
+            return 55; // M2 Pro/Max
+         }
+         if (info.cpuCores >= 10) {
+            return 50; // M2 Pro
+         }
+         return 45; // M2 base
+      },
+   },
+   // Apple Silicon M1 series
+   {
+      matcher: (info) => {
+         return info.arch === 'arm64' && info.platform === 'darwin' && info.cpuModel.includes('M1');
+      },
+      calculator: (info) => {
+         if (info.cpuCores >= 10) {
+            return 45; // M1 Pro/Max
+         }
+         if (info.cpuCores >= 8) {
+            return 40; // M1 Pro
+         }
+         return 35; // M1 base
+      },
+   },
+   // Other Apple Silicon (unknown variants)
+   {
+      matcher: (info) => {
+         return info.arch === 'arm64' && info.platform === 'darwin';
+      },
+      calculator: () => {
+         return 40;
+      },
+   },
    // Intel/AMD x64 - scale by core count
-   if (arch === 'x64') {
-      // High-end desktop/server CPUs
-      if (cpuCores >= 16) {
-         return 30;
-      }
-      if (cpuCores >= 8) {
-         return 22;
-      }
-      if (cpuCores >= 4) {
-         return 15;
-      }
-      return 10; // Low-end CPUs
-   }
-
+   {
+      matcher: (info) => {
+         return info.arch === 'x64';
+      },
+      calculator: (info) => {
+         if (info.cpuCores >= 16) {
+            return 30; // High-end desktop/server
+         }
+         if (info.cpuCores >= 8) {
+            return 22; // Mid-range
+         }
+         if (info.cpuCores >= 4) {
+            return 15; // Low-mid range
+         }
+         return 10; // Low-end
+      },
+   },
    // ARM Linux (e.g., Raspberry Pi, AWS Graviton)
-   if (arch === 'arm64') {
-      if (cpuCores >= 8) {
-         return 20; // AWS Graviton or similar
-      }
-      return 8; // Raspberry Pi or similar
+   {
+      matcher: (info) => {
+         return info.arch === 'arm64';
+      },
+      calculator: (info) => {
+         return info.cpuCores >= 8 ? 20 : 8;
+      },
+   },
+   // Fallback for unknown architectures
+   {
+      matcher: () => {
+         return true;
+      },
+      calculator: () => {
+         return 15;
+      },
+   },
+];
+
+function getBaselineChunksPerSecond(systemInfo: SystemInfo): number {
+   // Find the first matching configuration
+   const matchedConfig = PERFORMANCE_CONFIGS.find((config) => {
+      return config.matcher(systemInfo);
+   });
+
+   if (!matchedConfig) {
+      // This should never happen due to the fallback matcher, but just in case
+      return 15;
    }
 
-   // Fallback for unknown architectures
-   return 15;
+   return matchedConfig.calculator(systemInfo);
 }
 
 /**

@@ -10,6 +10,24 @@ import {
 } from '../time-estimate.ts';
 
 describe('time-estimate', () => {
+   describe('Apple Silicon performance scaling', () => {
+      it('provides reasonable estimates for current system', () => {
+         const info = getSystemInfo();
+
+         const estimate = estimateEmbeddingTime(100);
+
+         // Verify the estimate is reasonable for the detected system
+         expect(estimate.chunksPerSecond).toBeGreaterThan(10);
+         expect(estimate.chunksPerSecond).toBeLessThan(100);
+         expect(estimate.estimatedSeconds).toBeGreaterThan(0);
+
+         // For Apple Silicon systems, should get decent performance
+         if (info.arch === 'arm64' && info.platform === 'darwin') {
+            expect(estimate.chunksPerSecond).toBeGreaterThanOrEqual(35);
+         }
+      });
+   });
+
    describe('getSystemInfo', () => {
       it('returns system information', () => {
          const info = getSystemInfo();
