@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "astro dev",
+    "dev": "PUBLIC_LIBRAGEN_VERSION=$(node -p \"require('../core/package.json').version\") astro dev",
     "build": "bash scripts/build.sh",
     "build:schemas": "cp ../core/schemas/*.schema.json ./public/schemas/v1/",
     "preview": "astro preview"
