@@ -295,6 +295,8 @@ Follow conventional commits:
 - `test:` - Adding or updating tests
 - `chore:` - Maintenance tasks
 
+DO NOT USE SCOPED COMMITS
+
 ## Common Mistakes to Avoid
 
 1. **Forgetting to update documentation** - Always update READMEs AND website docs
