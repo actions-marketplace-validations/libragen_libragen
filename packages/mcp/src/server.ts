@@ -58,7 +58,10 @@ const serverConfigs = new WeakMap<McpServer, ServerConfig>();
 export async function updateLibraryPathsFromRoots(roots: Array<{ uri: string; name?: string }>): Promise<void> {
    const paths: string[] = [];
 
-   // Check each root for a .libragen/libraries directory
+   // Always include global directory FIRST (primary install location)
+   paths.push(getDefaultLibraryDir());
+
+   // Check each root for a .libragen/libraries directory (for discovery)
    for (const root of roots) {
       // Convert file:// URI to path
       let rootPath: string;
@@ -79,9 +82,6 @@ export async function updateLibraryPathsFromRoots(roots: Array<{ uri: string; na
          paths.push(projectLibDir);
       }
    }
-
-   // Always include global directory
-   paths.push(getDefaultLibraryDir());
 
    libraryPaths.paths = paths;
    libraryPaths.initialized = true;

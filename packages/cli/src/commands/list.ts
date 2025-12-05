@@ -6,6 +6,7 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
+import * as path from 'path';
 import { LibraryManager, formatBytes } from '@libragen/core';
 import type { InstalledLibrary, InstalledCollection } from '@libragen/core';
 
@@ -24,17 +25,22 @@ export const listCommand = new Command('list')
    .option('--json', 'Output as JSON')
    .option('-v, --verbose', 'Show detailed information')
    .option('--show-path', 'Show the file path for each library')
-   .option('-p, --path <paths...>', 'Library path(s) to use (excludes global and auto-detection)')
+   .option('-p, --path <paths...>', 'Project directory (will search <path>/.libragen/libraries)')
    .option('--libraries', 'Show only libraries')
    .option('--collections', 'Show only collections')
    .action(async (options: ListOptions) => {
       try {
-         // If explicit paths provided, use only those (no global, no auto-detect)
-         const manager = new LibraryManager(
-            options.path
-               ? { paths: options.path }
-               : undefined
-         );
+         // If explicit paths provided, transform them to .libragen/libraries subdirectories
+         let managerOptions: { paths: string[] } | undefined;
+
+         if (options.path) {
+            const transformedPaths = options.path.map((p) => {
+               return path.join(p, '.libragen', 'libraries');
+            });
+            managerOptions = { paths: transformedPaths };
+         }
+
+         const manager = new LibraryManager(managerOptions);
 
          const showLibraries = !options.collections || options.libraries,
                showCollections = !options.libraries || options.collections;

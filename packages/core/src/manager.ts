@@ -164,18 +164,18 @@ export class LibraryManager {
          // Default behavior: global + auto-detect project
          const paths: string[] = [];
 
-         // Auto-detect is on by default
+         // Global is included by default and comes FIRST (primary install location)
+         if (options?.includeGlobal !== false) {
+            paths.push(getDefaultLibraryDir());
+         }
+
+         // Auto-detect is on by default (for discovery, not primary install)
          if (options?.autoDetect !== false) {
             const projectDir = detectProjectLibraryDir(options?.cwd);
 
             if (projectDir) {
                paths.push(projectDir);
             }
-         }
-
-         // Global is included by default
-         if (options?.includeGlobal !== false) {
-            paths.push(getDefaultLibraryDir());
          }
 
          this._locations = {

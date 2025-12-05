@@ -6,6 +6,7 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
+import * as path from 'path';
 import { LibraryManager } from '@libragen/core';
 
 interface UninstallOptions {
@@ -17,16 +18,21 @@ export const uninstallCommand = new Command('uninstall')
    .alias('u')
    .description('Remove an installed library or collection')
    .argument('<name>', 'Library or collection name to uninstall')
-   .option('-p, --path <paths...>', 'Library path(s) to search (excludes global and auto-detection)')
+   .option('-p, --path <paths...>', 'Project directory (will search <path>/.libragen/libraries)')
    .option('-c, --collection', 'Uninstall a collection (and unreferenced libraries)')
    .action(async (name: string, options: UninstallOptions) => {
       try {
-         // If explicit paths provided, use only those
-         const manager = new LibraryManager(
-            options.path
-               ? { paths: options.path }
-               : undefined
-         );
+         // If explicit paths provided, transform them to .libragen/libraries subdirectories
+         let managerOptions: { paths: string[] } | undefined;
+
+         if (options.path) {
+            const transformedPaths = options.path.map((p) => {
+               return path.join(p, '.libragen', 'libraries');
+            });
+            managerOptions = { paths: transformedPaths };
+         }
+
+         const manager = new LibraryManager(managerOptions);
 
          if (options.collection) {
             // Uninstall collection

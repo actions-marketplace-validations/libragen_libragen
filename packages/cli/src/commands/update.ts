@@ -7,6 +7,7 @@
 import { Command } from 'commander';
 import ora from 'ora';
 import chalk from 'chalk';
+import * as path from 'path';
 import {
    LibraryManager,
    CollectionClient,
@@ -48,19 +49,24 @@ export const updateCommand = new Command('update')
    .alias('up')
    .description('Update libraries from their collections (only works for libraries installed from collections)')
    .argument('[name]', 'Library name to update (updates all collection libraries if omitted)')
-   .option('-p, --path <paths...>', 'Library path(s) to search (excludes global and auto-detection)')
+   .option('-p, --path <paths...>', 'Project directory (will search <path>/.libragen/libraries)')
    .option('-f, --force', 'Force update even if versions match')
    .option('-n, --dry-run', 'Show what would be updated without making changes')
    .action(async (name: string | undefined, options: UpdateOptions) => {
       const spinner = ora();
 
       try {
-         // If explicit paths provided, use only those
-         const manager = new LibraryManager(
-            options.path
-               ? { paths: options.path }
-               : undefined
-         );
+         // If explicit paths provided, transform them to .libragen/libraries subdirectories
+         let managerOptions: { paths: string[] } | undefined;
+
+         if (options.path) {
+            const transformedPaths = options.path.map((p) => {
+               return path.join(p, '.libragen', 'libraries');
+            });
+            managerOptions = { paths: transformedPaths };
+         }
+
+         const manager = new LibraryManager(managerOptions);
 
          const client = new CollectionClient();
 

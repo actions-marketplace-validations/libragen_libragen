@@ -57,7 +57,12 @@ async function resolveLibraryPath(
       spinner.start(`Resolving library '${library}'...`);
    }
 
-   const manager = new LibraryManager(paths ? { paths } : undefined);
+   // Transform paths to .libragen/libraries subdirectories
+   const transformedPaths = paths?.map((p) => {
+      return path.join(p, '.libragen', 'libraries');
+   });
+
+   const manager = new LibraryManager(transformedPaths ? { paths: transformedPaths } : undefined);
 
    const installed = await manager.find(library);
 
@@ -183,7 +188,7 @@ export const queryCommand = new Command('query')
    .description('Search a .libragen library')
    .argument('<query>', 'Search query')
    .requiredOption('-l, --library <name-or-path>', 'Library name or path to .libragen file')
-   .option('-p, --path <paths...>', 'Library path(s) to use for name resolution (excludes global and auto-detection)')
+   .option('-p, --path <paths...>', 'Project directory (will search <path>/.libragen/libraries)')
    .option('-k <number>', 'Number of results to return', '5')
    .option('--hybrid-alpha <number>', 'Balance between vector (1) and keyword (0) search', '0.5')
    .option('--content-version <version>', 'Filter by content version')
