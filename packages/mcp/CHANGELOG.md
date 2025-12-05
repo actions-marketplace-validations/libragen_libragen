@@ -1,5 +1,21 @@
 # @libragen/mcp
 
+## 0.3.0
+
+### Minor Changes
+
+- [`1ce77c6`](https://github.com/libragen/libragen/commit/1ce77c6528916ae34084fe195a529d920ad5b506) Thanks [@yokuze](https://github.com/yokuze)! - Enhanced CLI path handling and updated default installation location.
+
+  - **Breaking Change**: Installations now default to `$LIBRAGEN_HOME/libraries` (global) instead of local `.libragen/libraries`.
+  - **Feature**: The `-p` flag now automatically appends `.libragen/libraries` to the provided path.
+  - **Improved**: Library discovery now prioritizes project-local libraries (shadowing global ones) while maintaining global default for new installations.
+  - Updated documentation and tests to reflect these changes.
+
+### Patch Changes
+
+- Updated dependencies [[`1ce77c6`](https://github.com/libragen/libragen/commit/1ce77c6528916ae34084fe195a529d920ad5b506)]:
+  - @libragen/core@0.3.0
+
 ## 0.2.1
 
 ### Patch Changes
