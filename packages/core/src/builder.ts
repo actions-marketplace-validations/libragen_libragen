@@ -704,12 +704,6 @@ export class Builder {
       const defaultFilename = `${libraryName}-${libraryVersion}.libragen`;
 
       if (!output) {
-         if (isGit) {
-            const os = await import('os');
-
-            return path.join(os.tmpdir(), defaultFilename);
-         }
-
          return defaultFilename;
       }
 
