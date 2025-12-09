@@ -41,9 +41,13 @@ program.addCommand(createCompletionServerCommand(program));
 // Check for updates
 try {
    const args = process.argv.slice(2);
+
    const isHelp = args.includes('--help') || args.includes('-h') || args.includes('help');
+
    const isNoArgs = args.length === 0;
-   const targetCommands = ['build', 'install', 'inspect', 'update', 'config'];
+
+   const targetCommands = [ 'build', 'install', 'inspect', 'update', 'config' ];
+
    const isTargetCommand = targetCommands.some((cmd) => {
       return args.includes(cmd);
    });

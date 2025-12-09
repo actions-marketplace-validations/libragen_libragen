@@ -166,6 +166,26 @@ const embeddings = await embedder.embedBatch(['text1', 'text2']);
 await embedder.dispose();
 ```
 
+**Configuration options:**
+
+```typescript
+const embedder = new Embedder({
+   model: 'Xenova/bge-small-en-v1.5',  // Model to use
+   quantization: 'q8',                  // 'fp32', 'fp16', 'q8', or 'q4'
+   batchSize: 32,                       // Batch size for embedBatch
+   cacheDir: './.cache',                // Model cache directory
+   numThreads: 4,                       // ONNX Runtime threads (auto-detected by default)
+});
+```
+
+**Performance tuning:**
+
+The `numThreads` option controls ONNX Runtime's intra-op parallelism for CPU inference. By default, it auto-detects your CPU core count and uses `cores - 1` threads. This typically provides 2-3x speedup on multi-core systems:
+
+- **Auto-detect (default):** Uses `Math.max(1, cpuCores - 1)`
+- **Custom value:** Set to specific number (e.g., `numThreads: 4`)
+- **Single-threaded:** Set to `1` to disable parallelism
+
 ### Chunker
 
 Splits text into semantic chunks using recursive character splitting.

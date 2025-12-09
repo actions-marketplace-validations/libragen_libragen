@@ -11,14 +11,22 @@ import {
    type FeatureExtractionPipeline,
    type ProgressInfo,
 } from '@huggingface/transformers';
-
+import { cpus } from 'os';
 import { getModelCacheDir } from './config.js';
+
 
 export interface EmbedderConfig {
    model?: string;
    quantization?: 'fp32' | 'fp16' | 'q8' | 'q4';
    batchSize?: number;
    cacheDir?: string;
+
+   /**
+    * Number of threads for ONNX Runtime intra-op parallelism.
+    * Defaults to auto-detection (CPU cores - 1).
+    * Set to 1 to disable multi-threading.
+    */
+   numThreads?: number;
 }
 
 export interface EmbedProgress {
@@ -92,7 +100,7 @@ export class Embedder implements IEmbedder {
 
    private _pipeline: FeatureExtractionPipeline | null = null;
    private _initPromise: Promise<void> | null = null;
-   private readonly _config: Required<Omit<EmbedderConfig, 'cacheDir'>> & Pick<EmbedderConfig, 'cacheDir'>;
+   private readonly _config: Required<Omit<EmbedderConfig, 'cacheDir' | 'numThreads'>> & Pick<EmbedderConfig, 'cacheDir' | 'numThreads'>;
 
    public constructor(config: EmbedderConfig = {}) {
       this._config = {
@@ -100,6 +108,7 @@ export class Embedder implements IEmbedder {
          quantization: config.quantization ?? DEFAULT_QUANTIZATION,
          batchSize: config.batchSize ?? DEFAULT_BATCH_SIZE,
          cacheDir: config.cacheDir,
+         numThreads: config.numThreads,
       };
    }
 
@@ -230,6 +239,15 @@ export class Embedder implements IEmbedder {
       // Disable local model check to always use remote/cached models
       env.allowLocalModels = false;
 
+      // Configure ONNX Runtime threading for optimal parallelism
+      if (env.backends.onnx.wasm) {
+         const numThreads = this._config.numThreads === undefined
+            ? this._getOptimalThreadCount()
+            : this._config.numThreads;
+
+         env.backends.onnx.wasm.numThreads = numThreads;
+      }
+
       const dtype = this._getDtype();
 
       this._pipeline = await (pipeline as Function)(
@@ -257,6 +275,16 @@ export class Embedder implements IEmbedder {
             return 'q8';
          }
       }
+   }
+
+   /**
+    * Get optimal thread count based on available CPU cores.
+    * Returns CPU cores - 1 (leaving one for OS), minimum 1.
+    */
+   private _getOptimalThreadCount(): number {
+      const cpuCount = cpus().length;
+
+      return Math.max(1, cpuCount - 1);
    }
 
 }
