@@ -314,6 +314,13 @@ describe('CLI', () => {
          expect(stdout).toContain('--show-path');
       });
 
+      it('supports ls alias', async () => {
+         const { stdout, exitCode } = await runCli([ 'ls', '--help' ]);
+
+         expect(exitCode).toBe(0);
+         expect(stdout).toContain('List installed libraries');
+      });
+
       it('handles empty library list', async () => {
          // Use a temp directory with no libraries
          const emptyProjectDir = path.join(tempDir, 'empty-list-test');

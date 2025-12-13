@@ -85,7 +85,7 @@ libragen update --dry-run
 | [`build`](https://libragen.dev/docs/cli#build) | Build a library from files or git repo |
 | [`query`](https://libragen.dev/docs/cli#query) | Search a library for relevant content |
 | [`inspect`](https://libragen.dev/docs/cli#inspect) | Display library or collection metadata |
-| [`list`](https://libragen.dev/docs/cli#list) | List installed libraries |
+| [`list`](https://libragen.dev/docs/cli#list) (alias: `ls`) | List installed libraries |
 | [`install`](https://libragen.dev/docs/cli#install) | Install a library or collection |
 | [`uninstall`](https://libragen.dev/docs/cli#uninstall) | Remove an installed library |
 | [`update`](https://libragen.dev/docs/cli#update) | Update libraries from collections |

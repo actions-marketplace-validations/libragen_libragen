@@ -180,6 +180,8 @@ libragen query -l my-api --content-version 2.0.0 "rate limits"
 
 List installed libraries.
 
+**Aliases:** `l`, `ls`
+
 ```bash
 libragen list [options]
 ```

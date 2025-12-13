@@ -21,6 +21,7 @@ interface ListOptions {
 
 export const listCommand = new Command('list')
    .alias('l')
+   .alias('ls')
    .description('List installed libraries and collections')
    .option('--json', 'Output as JSON')
    .option('-v, --verbose', 'Show detailed information')
