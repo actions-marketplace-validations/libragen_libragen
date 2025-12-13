@@ -1,0 +1,126 @@
+---
+/**
+ * Compact newsletter signup for embedding in footer using EmailOctopus.
+ */
+import { Mail } from 'lucide-react';
+---
+
+<div class="newsletter-compact">
+   <h3 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gray-900 dark:text-white">
+      <Mail className="h-4 w-4" />
+      Stay Updated
+   </h3>
+   <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+      Get notified about new features and updates.
+   </p>
+   <div class="mt-3 newsletter-compact-form">
+      <script async src="https://eomail5.com/form/9350e90c-d842-11f0-ad93-3b5acdab74dd.js" data-form="9350e90c-d842-11f0-ad93-3b5acdab74dd"></script>
+   </div>
+</div>
+
+<style>
+   /* Reset EmailOctopus container */
+   .newsletter-compact :global([data-form="9350e90c-d842-11f0-ad93-3b5acdab74dd"]) {
+      font-family: inherit !important;
+   }
+
+   /* Form container - must have transparent background for footer */
+   .newsletter-compact :global(.eo-form-container) {
+      background: transparent !important;
+      padding: 0 !important;
+   }
+
+   /* Form layout */
+   .newsletter-compact :global(.eo-form-wrap),
+   .newsletter-compact :global(.main-form) {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.5rem !important;
+      width: 100% !important;
+   }
+
+   .newsletter-compact :global([eo-form-fields-container]) {
+      width: 100% !important;
+   }
+
+   .newsletter-compact :global(.emailoctopus-form-row) {
+      margin-bottom: 0 !important;
+      width: 100% !important;
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+   }
+
+   /* Text inputs */
+   .newsletter-compact :global(input[type="email"]),
+   .newsletter-compact :global(input[type="text"]) {
+      background: rgba(0, 0, 0, 0.05) !important;
+      border: 1px solid rgba(0, 0, 0, 0.1) !important;
+      border-radius: 0.375rem !important;
+      padding: 0.5rem 0.75rem !important;
+      font-size: 0.875rem !important;
+      color: inherit !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      box-sizing: border-box !important;
+   }
+
+   :global(.dark) .newsletter-compact :global(input[type="email"]),
+   :global(.dark) .newsletter-compact :global(input[type="text"]) {
+      background: rgba(255, 255, 255, 0.05) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      color: white !important;
+   }
+
+   .newsletter-compact :global(input[type="email"]::placeholder),
+   .newsletter-compact :global(input[type="text"]::placeholder) {
+      color: rgba(0, 0, 0, 0.4) !important;
+   }
+
+   :global(.dark) .newsletter-compact :global(input[type="email"]::placeholder),
+   :global(.dark) .newsletter-compact :global(input[type="text"]::placeholder) {
+      color: rgba(255, 255, 255, 0.4) !important;
+   }
+
+   /* Submit button */
+   .newsletter-compact :global(button[type="submit"]),
+   .newsletter-compact :global(input[type="submit"]),
+   .newsletter-compact :global(.btn-primary) {
+      background: #4f46e5 !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 0.375rem !important;
+      padding: 0.5rem 1rem !important;
+      font-size: 0.875rem !important;
+      font-weight: 500 !important;
+      cursor: pointer !important;
+      width: 100% !important;
+   }
+
+   .newsletter-compact :global(button[type="submit"]:hover),
+   .newsletter-compact :global(input[type="submit"]:hover),
+   .newsletter-compact :global(.btn-primary:hover) {
+      background: #4338ca !important;
+   }
+
+   /* Success/error messages */
+   .newsletter-compact :global(.eo-form-message),
+   .newsletter-compact :global(.emailoctopus-success-message) {
+      font-size: 0.875rem !important;
+      padding: 0.5rem !important;
+      border-radius: 0.375rem !important;
+      margin-top: 0.5rem !important;
+      color: #10b981 !important;
+      background: rgba(16, 185, 129, 0.1) !important;
+   }
+
+   /* Make the "Powered by" text more subtle in footer */
+   .newsletter-compact :global([data-form] a[href*="emailoctopus"]) {
+      opacity: 0.6;
+      font-size: 0.75rem;
+   }
+
+   .newsletter-compact :global([data-form] a[href*="emailoctopus"]:hover) {
+      opacity: 1;
+   }
+</style>

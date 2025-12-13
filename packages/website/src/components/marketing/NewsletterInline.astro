@@ -1,0 +1,164 @@
+---
+/**
+ * Inline newsletter CTA using EmailOctopus embedded form.
+ */
+---
+
+<div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+   <div class="newsletter-inline rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-8 shadow-xl shadow-primary-500/20 sm:px-12 sm:py-10">
+      <div class="flex flex-col items-center gap-6 text-center lg:flex-row lg:gap-8 lg:text-left">
+         <div class="flex-1">
+            <h3 class="text-xl font-bold text-white sm:text-2xl">
+               Get updates on new features
+            </h3>
+            <p class="mt-2 text-primary-100">
+               Be the first to know when we ship new MCP and CLI improvements, and integrations.
+            </p>
+         </div>
+         <div class="w-full shrink-0 lg:w-auto">
+            <script async src="https://eomail5.com/form/29908cb0-d7d0-11f0-a2be-3b5acdab74dd.js" data-form="29908cb0-d7d0-11f0-a2be-3b5acdab74dd"></script>
+         </div>
+      </div>
+   </div>
+</div>
+
+<style>
+   .newsletter-inline {
+      /* Common values as CSS custom properties */
+      --height: 48px;
+      --radius: 0.5rem;
+      --transition: all 0.2s ease;
+      --white-15: rgba(255, 255, 255, 0.15);
+      --white-30: rgba(255, 255, 255, 0.3);
+   }
+
+   /* Reset EmailOctopus container */
+   .newsletter-inline :global([data-form="29908cb0-d7d0-11f0-a2be-3b5acdab74dd"]) {
+      font-family: inherit !important;
+   }
+
+   /* Form container */
+   .newsletter-inline :global(.eo-form-container) {
+      background: transparent !important;
+      padding: 0 !important;
+   }
+
+   /* Form layouts - horizontal row */
+   .newsletter-inline :global(.eo-form-wrap),
+   .newsletter-inline :global(.main-form) {
+      display: flex !important;
+      gap: 0.75rem !important;
+      align-items: stretch !important;
+   }
+
+   .newsletter-inline :global(.eo-form-wrap) {
+      flex-wrap: wrap !important;
+   }
+
+   .newsletter-inline :global(.main-form) {
+      flex-wrap: nowrap !important;
+   }
+
+   .newsletter-inline :global([eo-form-fields-container]) {
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+   }
+
+   .newsletter-inline :global(.emailoctopus-form-row) {
+      margin-bottom: 0 !important;
+   }
+
+   /* Text inputs */
+   .newsletter-inline :global(input[type="email"]),
+   .newsletter-inline :global(input[type="text"]) {
+      background: var(--white-15) !important;
+      backdrop-filter: blur(8px) !important;
+      border: 1px solid var(--white-30) !important;
+      border-radius: var(--radius) !important;
+      padding: 0.75rem 1rem !important;
+      font-size: 1rem !important;
+      line-height: 1.5 !important;
+      color: white !important;
+      width: 100% !important;
+      min-width: 250px !important;
+      max-width: 280px !important;
+      transition: var(--transition) !important;
+      box-sizing: border-box !important;
+      height: var(--height) !important;
+   }
+
+   .newsletter-inline :global(input[type="email"]::placeholder),
+   .newsletter-inline :global(input[type="text"]::placeholder) {
+      color: rgba(255, 255, 255, 0.7) !important;
+   }
+
+   .newsletter-inline :global(input[type="email"]:focus),
+   .newsletter-inline :global(input[type="text"]:focus) {
+      outline: none !important;
+      border-color: rgba(255, 255, 255, 0.6) !important;
+      background: rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1) !important;
+   }
+
+   /* Submit button */
+   .newsletter-inline :global(button[type="submit"]),
+   .newsletter-inline :global(input[type="submit"]),
+   .newsletter-inline :global(.btn-primary) {
+      background: white !important;
+      color: #4f46e5 !important;
+      border: none !important;
+      border-radius: var(--radius) !important;
+      padding: 0.75rem 1.5rem !important;
+      font-size: 1rem !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      transition: var(--transition) !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+      width: auto !important;
+      margin-bottom: 0 !important;
+      box-sizing: border-box !important;
+      height: var(--height) !important;
+   }
+
+   .newsletter-inline :global(button[type="submit"]:hover),
+   .newsletter-inline :global(input[type="submit"]:hover),
+   .newsletter-inline :global(.btn-primary:hover) {
+      background: #f9fafb !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+   }
+
+   /* Hide powered-by branding */
+   .newsletter-inline :global(.eo-form-footer),
+   .newsletter-inline :global([eo-block="powered-by"]),
+   .newsletter-inline :global(.mastfoot),
+   .newsletter-inline :global([data-form] > .text-center) {
+      display: none !important;
+   }
+
+   /* Messages */
+   .newsletter-inline :global(.eo-form-message) {
+      color: white !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+      border-radius: var(--radius) !important;
+      padding: 0.75rem 1rem !important;
+      margin-top: 0.75rem !important;
+   }
+
+   /* Hide labels (use placeholders) */
+   .newsletter-inline :global(label) {
+      display: none !important;
+   }
+
+   .newsletter-inline :global(.inline-container) {
+      margin: 0 auto;
+   }
+
+   .newsletter-inline :global(.emailoctopus-success-message:not(:empty)) {
+      color: white !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+      border-radius: var(--radius) !important;
+      padding: 0.75rem 1rem !important;
+      margin-top: 0.75rem !important;
+   }
+</style>

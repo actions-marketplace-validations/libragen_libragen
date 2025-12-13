@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Play, Pause } from 'lucide-react';
 import 'asciinema-player/dist/bundle/asciinema-player.css';
 
+// Provide a minimal module declaration for asciinema-player in-case
+// the package doesn't ship TypeScript types and @types isn't available.
+// This silences the "Could not find a declaration file for module 'asciinema-player'" error.
+declare module 'asciinema-player';
+
 interface AsciinemaTerminalProps {
    src: string;
    title?: string;
