@@ -12,9 +12,12 @@ export const libraryUrl = `${import.meta.env.SITE}/${libraryFilename}`;
 Libragen (pronounced "LIB-ruh-jen") lets you create portable, searchable RAG libraries from any documentation. Libraries are single SQLite files you can share, version control, and query locally—no cloud services required.
 
 > **Try it now:** This documentation is available as a libragen library. Download <LibraryDownloadLink /> and query it locally!
->
-> <pre data-language="bash"><code>libragen install <a href={libraryUrl}>{libraryUrl}</a></code></pre>
->
+
+```bash
+curl -L -O https://libragen.dev/libragen-docs-0.4.0.libragen # Download the docs library
+libragen install libragen-docs-0.4.0.libragen # Install it
+libragen query -l libragen-docs "How do I build a library?" # Query it
+```
 
 ## Quick Start
 

@@ -235,6 +235,40 @@ Or add it manually to your MCP config:
 }
 ```
 
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `LIBRAGEN_HOME` | Override base directory for all libragen data |
+| `LIBRAGEN_MODEL_CACHE` | Override model cache directory |
+| `LIBRAGEN_TASK_EXPIRY_MS` | How long completed build tasks are retained (default: 3600000 = 1 hour) |
+
+## Prompts (Slash Commands)
+
+The server exposes prompts that appear as slash commands in MCP-compatible clients:
+
+### `/libragen-search`
+
+Search installed libraries for relevant code snippets.
+
+**Arguments:**
+- `query` (string) — What to search for (e.g., "authentication", "React hooks")
+
+### `/libragen-build`
+
+Build a searchable library from source code.
+
+**Arguments:**
+- `source` (string) — Path to the source directory or file to index
+
+### `/libragen-collection`
+
+Create a collection file grouping multiple libraries.
+
+**Arguments:**
+- `name` (string) — Name for the collection
+- `libraries` (string, optional) — Comma-separated list of library paths
+
 ## Tips for Best Results
 
 1. **Be specific** - "Search react-docs for useEffect dependency arrays" works better than "how does useEffect work"

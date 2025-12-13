@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Stop your AI from hallucinating code, and ground it in your actual documentation</strong>
+  <strong>Ground your AI in real documentation—not stale training data</strong>
 </p>
 
 <p align="center">
@@ -23,307 +23,71 @@
 <p align="center">
   <a href="https://libragen.dev">Documentation</a> •
   <a href="https://libragen.dev/docs/getting-started">Getting Started</a> •
+  <a href="https://libragen.dev/docs/cli">CLI</a> •
+  <a href="https://libragen.dev/docs/mcp">MCP Server</a> •
   <a href="https://github.com/libragen/libragen/discussions">Discussions</a>
 </p>
 
 ---
 
-Create private, local RAG libraries that ground your AI in real documentation—not 2-year-old training data. No cloud, no API keys, just single files you can share with your whole team.
+Create private, local RAG libraries from any documentation. Libraries are single SQLite files you can share with your team—no cloud, no API keys.
 
-> **What's RAG?** Retrieval-Augmented Generation lets AI retrieve relevant context before responding, instead of relying solely on training data. libragen packages your docs into searchable libraries your AI can query.
+## Why libragen?
 
-## 🎯 Why libragen?
+- **Stop hallucinations** — Give AI agents authoritative docs to cite instead of guessing
+- **Always current** — Rebuild when docs change; your AI gets the latest APIs
+- **Private & local** — Everything runs on your machine, nothing leaves your network
+- **Shareable** — Single `.libragen` files work anywhere
 
-- **Ground AI in truth** — Give your coding agents authoritative docs to cite, dramatically reducing hallucinations
-- **Always current** — Rebuild libraries when docs change; your AI gets the latest APIs, not stale training data
-- **Private & local** — Everything runs on your machine. No API keys, no cloud bills, no data leaving your network
-- **Shareable** — Single `.libragen` files work anywhere. Share via git, S3, or install from curated collections
-
-## ✨ Features
-
-- **� Hybrid Search** — Combines vector similarity with BM25 keyword matching
-- **📊 Reranking** — Optional cross-encoder reranking for improved relevance
-- **📦 Portable** — Single-file SQLite databases with embedded vectors
-- **🧠 Smart Chunking** — Language-aware splitting that respects code boundaries
-- **🌐 Multiple Sources** — Build from local files or git repositories
-- **🤖 MCP Native** — Works directly in Claude Desktop, VS Code, and any MCP client
-
-## 📦 Packages
+## Packages
 
 | Package | Description |
 |---------|-------------|
-| [`@libragen/core`](./packages/core) | Core library for embedding, chunking, storage |
-| [`@libragen/cli`](./packages/cli) | Command-line interface for building and querying |
-| [`@libragen/mcp`](./packages/mcp) | Model Context Protocol server for AI assistants |
+| [`@libragen/cli`](./packages/cli) | Build and query libraries from the command line |
+| [`@libragen/mcp`](./packages/mcp) | Connect AI assistants to your libraries via MCP |
+| [`@libragen/core`](./packages/core) | Programmatic API for embedding, search, and library management |
 
-## 🚀 Quick Start
+## Quick Start
 
-### Installation
-
-```bash
-npm install -g @libragen/cli
-```
-
-### Build a Library
+### 1. Build a library
 
 ```bash
-# From your internal docs
-libragen build ./internal-api-docs --name internal-api
+# From local docs
+npx @libragen/cli build ./your-private-docs --name company-docs
 
-# From a private git repository
-libragen build https://github.com/your-org/private-docs -o company-docs.libragen
-
-# From any public repo
-libragen build https://github.com/facebook/react -o react.libragen
+# From a git repository
+npx @libragen/cli build https://github.com/anthropics/anthropic-cookbook --name anthropic-cookbook
 ```
 
-### Query a Library
+### 2. Connect your AI
 
 ```bash
-libragen query "how to authenticate users" -l my-project.libragen
+npx -y install-mcp @libragen/mcp
 ```
 
-### Use with AI Assistants
+Restart your AI tool (Claude Desktop, VS Code, Cursor, etc.). Libraries in your global directory are now searchable.
 
-Install the MCP server globally:
+### 3. Ask questions
 
-```bash
-npm install -g @libragen/mcp
-```
+> "How do I implement tool use with Claude's API?"
 
-Add to your Claude Desktop config (on macOS:
-`~/Library/Application Support/Claude/claude_desktop_config.json`):
+> "What's our internal policy on deploying to production?"
 
-```json
-{
-   "mcpServers": {
-      "libragen": {
-         "command": "npx",
-         "args": ["-y", "@libragen/mcp"]
-      }
-   }
-}
-```
+> "Show me examples of streaming responses from the Anthropic cookbook"
 
-Then install libraries to make them available:
+Your AI retrieves relevant documentation and responds with accurate, cited answers—not hallucinated guesses from 2-year-old training data.
 
-```bash
-libragen install my-project.libragen
-```
+## What else can you do?
 
-## � CLI Commands
+- **Chat with your Obsidian vault** — [Tutorial →](https://libragen.dev/docs/tutorial-obsidian)
+- **Make your company's internal docs searchable** — Runbooks, wikis, policies—all queryable by AI
+- **Create a shared library for your team** — One `.libragen` file, everyone's on the same page
+- **Auto-build libraries in CI** — Use the [GitHub Action](https://github.com/libragen/libragen) to generate `.libragen` files on every push
 
-| Command | Description |
-|---------|-------------|
-| `build <source>` | Build a library from files or git repo |
-| `query <query>` | Search a library for relevant content |
-| `info <library>` | Display library metadata |
-| `list` | List installed libraries and collections |
-| `install <source>` | Install a library or collection |
-| `uninstall <name>` | Remove an installed library or collection |
-| `update [name]` | Update installed libraries to newer versions |
-| `collection create` | Create a collection file |
-| `config` | Display configuration and paths |
-| `completions <action>` | Manage shell completions (bash, zsh, fish) |
+---
 
-## 📚 Collections
+**[Full documentation →](https://libragen.dev)**
 
-Collections are JSON files that group libraries together for easy installation:
-
-```json
-{
-   "name": "my-stack",
-   "description": "Libraries for my project",
-   "version": "1.0.0",
-   "items": [
-      { "library": "https://example.com/react.libragen" },
-      { "library": "https://example.com/typescript.libragen" },
-      { "library": "https://example.com/testing.libragen", "required": false },
-      { "collection": "https://example.com/base-web.json" }
-   ]
-}
-```
-
-Create a collection:
-
-```bash
-# Initialize a template
-libragen collection init my-stack.json
-
-# Or create with libraries directly
-libragen collection create my-stack.json \
-   -l ./react.libragen \
-   -l ./typescript.libragen \
-   -o ./testing.libragen
-```
-
-Install a collection:
-
-```bash
-libragen install ./my-stack.json        # Required libraries only
-libragen install ./my-stack.json --all  # Include optional libraries
-```
-
-Collections support:
-
-- **Nesting** — Collections can include other collections
-- **Deduplication** — Libraries are only installed once
-- **Optional items** — Mark libraries as `"required": false`
-- **Reference counting** — Uninstalling removes only unreferenced libraries
-
-## ⚙️ Configuration
-
-### Storage Location
-
-By default, libragen stores libraries and configuration in a platform-specific directory:
-
-| Platform | Default Location                                                  |
-| -------- | ----------------------------------------------------------------- |
-| macOS    | `~/Library/Application Support/libragen`                          |
-| Windows  | `%APPDATA%\libragen`                                              |
-| Linux    | `$XDG_DATA_HOME/libragen` (defaults to `~/.local/share/libragen`) |
-
-Override this by setting the `LIBRAGEN_HOME` environment variable:
-
-```bash
-export LIBRAGEN_HOME=/custom/path/to/libragen
-```
-
-The directory structure is:
-
-```text
-$LIBRAGEN_HOME/
-  libraries/       # Installed .libragen files
-  manifest.json    # Tracks installed libraries and collections
-  collections.json # Collection configuration
-  cache/           # Cached collection indexes
-```
-
-## 📄 Library Format
-
-A `.libragen` file is a SQLite database containing:
-
-- **Metadata** — Library name, version, description, embedding model info
-- **Chunks** — Code/documentation segments with source file info
-- **Embeddings** — Vector representations using `Xenova/bge-small-en-v1.5` (384 dims)
-- **FTS Index** — Full-text search index for keyword matching
-
-## 📖 Programmatic Usage
-
-Use `@libragen/core` directly in your TypeScript/JavaScript projects:
-
-```typescript
-import { Library, Searcher, Embedder, Reranker } from '@libragen/core';
-
-// Open an existing library and search it
-const library = await Library.open('./my-docs.libragen');
-
-const embedder = new Embedder();
-await embedder.initialize();
-
-const reranker = new Reranker();
-await reranker.initialize();
-
-const searcher = new Searcher(embedder, library.getStore(), { reranker });
-
-const results = await searcher.search({
-   query: 'how do I authenticate?',
-   k: 5,
-   rerank: true,  // Use cross-encoder reranking
-});
-
-for (const result of results) {
-   console.log(`[${result.score.toFixed(3)}] ${result.sourceFile}`);
-   console.log(result.content);
-}
-
-await library.close();
-```
-
-```typescript
-import { Builder } from '@libragen/core';
-
-// Build a library from source files
-const builder = new Builder();
-const result = await builder.build('./docs', {
-   name: 'my-docs',
-   description: 'Internal API documentation',
-   include: ['**/*.md', '**/*.mdx'],
-});
-
-console.log(`Built ${result.outputPath} with ${result.stats.chunkCount} chunks`);
-```
-
-## 🛠️ Development
-
-```bash
-# Install dependencies
-npm install
-
-# Run tests
-npm test
-
-# Run linting
-npm run standards
-
-# Build all packages
-npm run build
-```
-
-## 🏗️ Architecture
-
-```text
-@libragen/cli (build, query, install, manage)
-        │
-        ▼
-@libragen/core
-  ├── Embedder (bge-small-en-v1.5)
-  ├── Chunker (language-aware splitting)
-  ├── VectorStore (SQLite + sqlite-vec + FTS5)
-  ├── Searcher (hybrid search with RRF)
-  ├── Reranker (mxbai-rerank-xsmall-v1)
-  ├── Library (create/open/validate)
-  ├── LibraryManager (install/uninstall/update)
-  ├── Manifest (tracks installations)
-  ├── CollectionResolver (nested collections)
-  └── Sources (FileSource, GitSource)
-        │
-        ▼
-@libragen/mcp (MCP server for AI assistants)
-  Tools: libragen_search, libragen_list, libragen_build,
-         libragen_install, libragen_uninstall, libragen_update,
-         libragen_collection
-```
-
-## 🙏 Acknowledgments
-
-libragen uses the following open-source models:
-
-- **[BGE-small-en-v1.5](https://huggingface.co/BAAI/bge-small-en-v1.5)** — Embedding model by BAAI (MIT License)
-- **[mxbai-rerank-xsmall-v1][mxbai]** — Reranking model by Mixedbread (Apache-2.0)
-
-[mxbai]: https://huggingface.co/mixedbread-ai/mxbai-rerank-xsmall-v1
-
-If you use libragen in academic work, please cite the underlying models:
-
-```bibtex
-@misc{bge_embedding,
-   title={C-Pack: Packaged Resources To Advance General Chinese Embedding},
-   author={Shitao Xiao and Zheng Liu and Peitian Zhang and Niklas Muennighoff},
-   year={2023},
-   eprint={2309.07597},
-   archivePrefix={arXiv},
-   primaryClass={cs.CL}
-}
-
-@online{rerank2024mxbai,
-   title={Boost Your Search With The Crispy Mixedbread Rerank Models},
-   author={Aamir Shakir and Darius Koenig and Julius Lipp and Sean Lee},
-   year={2024},
-   url={https://www.mixedbread.ai/blog/mxbai-rerank-v1},
-}
-```
-
-## 📜 License
+## License
 
 MIT — see [LICENSE](./LICENSE) for details.
