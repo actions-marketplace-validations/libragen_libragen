@@ -318,7 +318,7 @@ export class Builder {
          const libraryVersion = opts.version || '0.1.0';
 
          // Resolve output path
-         const outputPath = await this._resolveOutputPath(opts.output, libraryName, libraryVersion, resolved.isGit);
+         const outputPath = await this._resolveOutputPath(opts.output, libraryName, libraryVersion);
 
          // Phase 2: Chunk source files BEFORE loading model
          // This ensures we fail fast on empty directories without loading the model
@@ -698,18 +698,11 @@ export class Builder {
    protected async _resolveOutputPath(
       output: string | undefined,
       libraryName: string,
-      libraryVersion: string,
-      isGit: boolean
+      libraryVersion: string
    ): Promise<string> {
       const defaultFilename = `${libraryName}-${libraryVersion}.libragen`;
 
       if (!output) {
-         if (isGit) {
-            const os = await import('os');
-
-            return path.join(os.tmpdir(), defaultFilename);
-         }
-
          return defaultFilename;
       }
 

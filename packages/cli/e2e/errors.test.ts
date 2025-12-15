@@ -267,7 +267,7 @@ describe('E2E: Error Handling', () => {
 
          const { exitCode, stdout, stderr } = await runCli([
             'update',
-            '-p', getProjectLibDir(projectDir),
+            '-p', projectDir,
          ], env);
 
          // Should succeed but indicate nothing to update

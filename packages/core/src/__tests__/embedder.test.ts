@@ -28,6 +28,13 @@ vi.mock('@huggingface/transformers', () => {
       env: {
          cacheDir: undefined as string | undefined,
          allowLocalModels: true,
+         backends: {
+            onnx: {
+               wasm: {
+                  numThreads: 1,
+               },
+            },
+         },
       },
    };
 });
@@ -197,6 +204,49 @@ describe('Embedder', () => {
          await embedder.dispose();
 
          expect(embedder.isInitialized()).toBe(false);
+      });
+   });
+
+   describe('parallelism configuration', () => {
+      it('should use custom thread count when specified', async () => {
+         const { env } = await import('@huggingface/transformers');
+
+         const customEmbedder = new Embedder({ numThreads: 2 });
+
+         await customEmbedder.initialize();
+
+         expect(env.backends.onnx.wasm?.numThreads).toBe(2);
+
+         await customEmbedder.dispose();
+      });
+
+      it('should auto-detect thread count when not specified', async () => {
+         const { env } = await import('@huggingface/transformers');
+
+         const autoEmbedder = new Embedder({});
+
+         await autoEmbedder.initialize();
+
+         // Should be >= 1 and reasonable (not more than 128 cores)
+         const threadCount = env.backends.onnx.wasm?.numThreads;
+
+         expect(threadCount).toBeGreaterThanOrEqual(1);
+
+         expect(threadCount).toBeLessThanOrEqual(128);
+
+         await autoEmbedder.dispose();
+      });
+
+      it('should allow single-threaded mode', async () => {
+         const { env } = await import('@huggingface/transformers');
+
+         const singleThreaded = new Embedder({ numThreads: 1 });
+
+         await singleThreaded.initialize();
+
+         expect(env.backends.onnx.wasm?.numThreads).toBe(1);
+
+         await singleThreaded.dispose();
       });
    });
 });

@@ -55,33 +55,33 @@ describe('E2E: Project Isolation', () => {
       }, 240000);
 
       it('installs lib-a to project-a', async () => {
-         const libDir = getProjectLibDir(projectA);
-
          const { exitCode, stdout } = await runCli([
             'install', libAPath,
-            '-p', libDir,
+            '-p', projectA,
          ], env);
 
          expect(exitCode).toBe(0);
          expect(stdout).toContain('Location:');
 
          // Verify file exists in project directory
+         const libDir = getProjectLibDir(projectA);
+
          const files = await fs.readdir(libDir);
 
          expect(files.some((f) => { return f.includes('lib-a'); })).toBe(true);
       });
 
       it('installs lib-b to project-b', async () => {
-         const libDir = getProjectLibDir(projectB);
-
          const { exitCode } = await runCli([
             'install', libBPath,
-            '-p', libDir,
+            '-p', projectB,
          ], env);
 
          expect(exitCode).toBe(0);
 
          // Verify file exists in project directory
+         const libDir = getProjectLibDir(projectB);
+
          const files = await fs.readdir(libDir);
 
          expect(files.some((f) => { return f.includes('lib-b'); })).toBe(true);
@@ -90,7 +90,7 @@ describe('E2E: Project Isolation', () => {
       it('list with -p project-a shows only lib-a', async () => {
          const { exitCode, stdout } = await runCli([
             'list', '--json',
-            '-p', getProjectLibDir(projectA),
+            '-p', projectA,
          ], env);
 
          expect(exitCode).toBe(0);
@@ -106,7 +106,7 @@ describe('E2E: Project Isolation', () => {
       it('list with -p project-b shows only lib-b', async () => {
          const { exitCode, stdout } = await runCli([
             'list', '--json',
-            '-p', getProjectLibDir(projectB),
+            '-p', projectB,
          ], env);
 
          expect(exitCode).toBe(0);
@@ -150,7 +150,7 @@ describe('E2E: Project Isolation', () => {
          // Install to project
          await runCli([
             'install', libPath,
-            '-p', getProjectLibDir(projectDir),
+            '-p', projectDir,
          ], env);
 
          // Get the installed library path
@@ -199,14 +199,14 @@ describe('E2E: Project Isolation', () => {
          });
 
          // Install to both projects
-         await runCli([ 'install', libPath, '-p', getProjectLibDir(projectC) ], env);
-         await runCli([ 'install', libPath, '-p', getProjectLibDir(projectD) ], env);
+         await runCli([ 'install', libPath, '-p', projectC ], env);
+         await runCli([ 'install', libPath, '-p', projectD ], env);
       }, 180000);
 
       it('uninstalls from project-c only', async () => {
          const { exitCode } = await runCli([
             'uninstall', 'shared-name-lib',
-            '-p', getProjectLibDir(projectC),
+            '-p', projectC,
          ], env);
 
          expect(exitCode).toBe(0);
@@ -215,7 +215,7 @@ describe('E2E: Project Isolation', () => {
       it('library still exists in project-d', async () => {
          const { exitCode, stdout } = await runCli([
             'list', '--json',
-            '-p', getProjectLibDir(projectD),
+            '-p', projectD,
          ], env);
 
          expect(exitCode).toBe(0);
@@ -230,7 +230,7 @@ describe('E2E: Project Isolation', () => {
       it('library removed from project-c', async () => {
          const { exitCode, stdout } = await runCli([
             'list', '--json',
-            '-p', getProjectLibDir(projectC),
+            '-p', projectC,
          ], env);
 
          expect(exitCode).toBe(0);
@@ -261,15 +261,15 @@ describe('E2E: Project Isolation', () => {
             output: 'lib-f.libragen',
          });
 
-         await runCli([ 'install', libE, '-p', getProjectLibDir(projectE) ], env);
-         await runCli([ 'install', libF, '-p', getProjectLibDir(projectF) ], env);
+         await runCli([ 'install', libE, '-p', projectE ], env);
+         await runCli([ 'install', libF, '-p', projectF ], env);
       }, 240000);
 
       it('list with multiple -p flags shows libraries from both', async () => {
          const { exitCode, stdout } = await runCli([
             'list', '--json',
-            '-p', getProjectLibDir(projectE),
-            '-p', getProjectLibDir(projectF),
+            '-p', projectE,
+            '-p', projectF,
          ], env);
 
          expect(exitCode).toBe(0);

@@ -23,9 +23,9 @@ interface InstallOptions {
 export const installCommand = new Command('install')
    .description('Install a library or collection')
    .argument('<source>', 'Library file (.libragen), collection file (.json), or URL')
-   .option('-p, --path <paths...>', 'Library path(s) to use (excludes global and auto-detection)')
+   .option('-p, --path <paths...>', 'Project directory (will install to <path>/.libragen/libraries)')
    .option('-f, --force', 'Overwrite existing libraries')
-   .option('-c, --collection <url>', 'Legacy: Collection URL to search for library name')
+   .option('-c, --collection <url>', 'Collection URL to search for library name')
    .option('--content-version <version>', 'Install specific content version')
    .option('-a, --all', 'Install all libraries including optional (for collections)')
    .option('-s, --select', 'Interactively select optional libraries (for collections)')
@@ -33,13 +33,19 @@ export const installCommand = new Command('install')
       const spinner = ora();
 
       try {
-         // If explicit path provided, use only that; otherwise use default (auto-detect +
-         // global)
-         const manager = new LibraryManager(
-            options.path
-               ? { paths: options.path }
-               : undefined
-         );
+         // If explicit path provided, transform it to .libragen/libraries subdirectory
+         let managerOptions: { paths: string[] } | undefined;
+
+         if (options.path) {
+            // Transform each path: ./some-folder -> ./some-folder/.libragen/libraries
+            const transformedPaths = options.path.map((p) => {
+               return path.join(p, '.libragen', 'libraries');
+            });
+
+            managerOptions = { paths: transformedPaths };
+         }
+
+         const manager = new LibraryManager(managerOptions);
 
          // Determine source type
          const isCollection = manager.isCollection(source),
@@ -61,8 +67,8 @@ export const installCommand = new Command('install')
             // Install from remote library URL
             await installRemoteLibrary(manager, source, options, spinner);
          } else {
-            // Legacy: search in configured collections by name
-            await installFromLegacyCollection(source, options, spinner, manager);
+            // Search in configured collections by name
+            await installFromCollection(source, options, spinner, manager);
          }
 
          console.log('');
@@ -209,13 +215,13 @@ async function installCollection(
    }
 }
 
-async function installFromLegacyCollection(
+async function installFromCollection(
    source: string,
    options: InstallOptions,
    spinner: ReturnType<typeof ora>,
    manager: LibraryManager
 ): Promise<void> {
-   // Legacy: search in configured collections by name
+   // Search in configured collections by name
    spinner.start('Searching collections...');
 
    const client = new CollectionClient();

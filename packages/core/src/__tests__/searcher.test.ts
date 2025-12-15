@@ -33,6 +33,13 @@ vi.mock('@huggingface/transformers', () => {
       env: {
          cacheDir: undefined as string | undefined,
          allowLocalModels: true,
+         backends: {
+            onnx: {
+               wasm: {
+                  numThreads: 1,
+               },
+            },
+         },
       },
    };
 });

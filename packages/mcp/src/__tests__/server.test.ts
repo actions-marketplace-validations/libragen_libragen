@@ -8,7 +8,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-import { createServer, warmEmbedder } from '../server.ts';
+import { createServer, warmEmbedder, updateServerEmbedder } from '../server.ts';
 import { Embedder, Chunker, VectorStore, CURRENT_SCHEMA_VERSION } from '@libragen/core';
 import type { LibraryMetadata } from '@libragen/core';
 import { createHash } from 'crypto';
@@ -45,6 +45,19 @@ describe('MCP Server', () => {
          const embedder = new Embedder();
 
          const server = createServer({ embedder });
+
+         expect(server).toBeDefined();
+      });
+
+      it('can update embedder on existing server', () => {
+         // Create server without embedder
+         const server = createServer();
+
+         // Create a mock embedder
+         const embedder = new Embedder();
+
+         // Update the server with the embedder
+         updateServerEmbedder(server, embedder);
 
          expect(server).toBeDefined();
       });

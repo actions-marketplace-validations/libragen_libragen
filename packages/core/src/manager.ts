@@ -164,7 +164,7 @@ export class LibraryManager {
          // Default behavior: global + auto-detect project
          const paths: string[] = [];
 
-         // Auto-detect is on by default
+         // Auto-detect is on by default (for discovery) -> PROJECT FIRST
          if (options?.autoDetect !== false) {
             const projectDir = detectProjectLibraryDir(options?.cwd);
 
@@ -173,7 +173,7 @@ export class LibraryManager {
             }
          }
 
-         // Global is included by default
+         // Global is included by default -> GLOBAL SECOND
          if (options?.includeGlobal !== false) {
             paths.push(getDefaultLibraryDir());
          }
@@ -291,12 +291,12 @@ export class LibraryManager {
 
    /**
     * Get the path where a library would be installed.
-    * Uses the first (primary) directory in the paths list.
+    * Uses the primary install directory (defaulting to global).
     *
     * @param name - Library name
     */
    public getInstallPath(name: string): string {
-      const dir = this._locations.paths[0] ?? getDefaultLibraryDir();
+      const dir = this.getPrimaryDirectory();
 
       return path.join(dir, `${name}.libragen`);
    }
@@ -305,12 +305,19 @@ export class LibraryManager {
     * Get the primary install directory.
     */
    public getPrimaryDirectory(): string {
+      const globalDir = getDefaultLibraryDir();
+
+      // Prefer global directory if it's in the list
+      if (this._locations.paths.includes(globalDir)) {
+         return globalDir;
+      }
+
       return this._locations.paths[0] ?? getDefaultLibraryDir();
    }
 
    /**
     * Install a library from a file path.
-    * Installs to the first (primary) directory in the paths list.
+    * Installs to the primary directory (defaulting to global).
     *
     * @param sourcePath - Path to the .libragen file to install
     * @param options - Install options
@@ -326,8 +333,8 @@ export class LibraryManager {
 
       sourceLib.close();
 
-      // Determine destination (first path is primary)
-      const destDir = this._locations.paths[0] ?? getDefaultLibraryDir();
+      // Determine destination
+      const destDir = this.getPrimaryDirectory();
 
       const destFilename = metadata.version
          ? `${metadata.name}-${metadata.version}.libragen`

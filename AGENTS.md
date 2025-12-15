@@ -35,15 +35,18 @@ The `LibraryManager` class handles library discovery, installation, and uninstal
 
 **Path Discovery (IMPORTANT):**
 - Default behavior: auto-detect `.libragen/libraries` in cwd + global directory
-- When `paths` option is provided: use ONLY those paths (no global, no auto-detection)
-- Project-local libraries take priority over global (first path wins)
+- Install: Defaults to Global directory (unless `-p` is used)
+- Discovery: Project-local libraries take priority over global (first path wins)
+- When `paths` option is provided (via `-p`): use ONLY those paths (no global, no auto-detection, no transformations applied by core, but CLI applies transformation)
 
 ```typescript
-// Default: auto-detect + global
+// Default: project (priority) + global
+// Install defaults to global via getPrimaryDirectory() logic
 const manager = new LibraryManager();
 
 // Explicit paths only (no global, no auto-detection)
 const manager = new LibraryManager({ paths: ['.libragen/libraries'] });
+```
 ```
 
 ### CLI Commands (`packages/cli/src/commands/`)
@@ -294,6 +297,8 @@ Follow conventional commits:
 - `refactor:` - Code changes that don't add features or fix bugs
 - `test:` - Adding or updating tests
 - `chore:` - Maintenance tasks
+
+DO NOT USE SCOPED COMMITS
 
 ## Common Mistakes to Avoid
 

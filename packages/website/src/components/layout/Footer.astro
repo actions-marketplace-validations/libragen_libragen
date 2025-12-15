@@ -1,5 +1,6 @@
 ---
 import { Github, Package } from 'lucide-react';
+import NewsletterCompact from './NewsletterCompact.astro';
 
 const productLinks = [
    { label: 'Documentation', href: '/docs' },
@@ -16,7 +17,7 @@ const communityLinks = [
 
 <footer class="border-t border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900" role="contentinfo">
    <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+      <div class="grid grid-cols-1 gap-8 md:grid-cols-4">
          <!-- Brand -->
          <div>
             <a href="/" class="flex items-center gap-2.5 text-xl font-bold text-gray-900 dark:text-white" aria-label="Libragen home">
@@ -73,6 +74,11 @@ const communityLinks = [
                   </li>
                ))}
             </ul>
+         </div>
+
+         <!-- Newsletter -->
+         <div>
+            <NewsletterCompact id="footer" />
          </div>
       </div>
 

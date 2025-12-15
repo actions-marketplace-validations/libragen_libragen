@@ -6,10 +6,18 @@ order: 1
 ---
 
 import LibraryDownloadLink from '../../components/docs/LibraryDownloadLink.astro';
+export const libraryFilename = `libragen-docs-${import.meta.env.PUBLIC_LIBRAGEN_VERSION || '0.1.0'}.libragen`;
+export const libraryUrl = `${import.meta.env.SITE}/${libraryFilename}`;
 
 Libragen (pronounced "LIB-ruh-jen") lets you create portable, searchable RAG libraries from any documentation. Libraries are single SQLite files you can share, version control, and query locally—no cloud services required.
 
 > **Try it now:** This documentation is available as a libragen library. Download <LibraryDownloadLink /> and query it locally!
+
+```bash
+curl -L -O https://libragen.dev/libragen-docs-0.4.0.libragen # Download the docs library
+libragen install libragen-docs-0.4.0.libragen # Install it
+libragen query -l libragen-docs "How do I build a library?" # Query it
+```
 
 ## Quick Start
 
@@ -21,11 +29,22 @@ Create a library from a directory of markdown, text, or HTML files:
 libragen build ./my-docs --name my-library
 ```
 
+Or, build from a git repository:
+
+```bash
+libragen build https://github.com/github/docs/tree/main/content
+```
+
 This will:
 - Process all supported files in `./my-docs`
 - Generate embeddings using a local model
 - Build a full-text search index
 - Save everything to `my-library-1.0.0.libragen`
+
+
+> NOTE: Depending on the size of your library, **building may take a few minutes**.
+>
+> Grab a coffee and come back in a few minutes; it's worth the wait!
 
 ### 2. Query Your Library
 
@@ -89,12 +108,11 @@ npm install --save-exact @libragen/core
 
 ## Library Storage
 
-Libraries are discovered from multiple locations:
+Libraries are stored and discovered from multiple locations:
 
-### Default Behavior
+### Default Installation Location
 
-1. **Project directory** — If `.libragen/libraries/` exists in the current directory, it's included automatically
-2. **Global directory** — Platform-specific location (see below)
+**By default, all installed .libragen files go to the global directory:**
 
 | Platform | Global Path |
 |----------|-------------|
@@ -102,15 +120,26 @@ Libraries are discovered from multiple locations:
 | Linux | `~/.local/share/libragen/libraries/` |
 | Windows | `%APPDATA%\libragen\libraries\` |
 
-Project-local libraries take priority over global libraries with the same name.
+You can override the global directory with the `LIBRAGEN_HOME` environment variable:
+
+```bash
+export LIBRAGEN_HOME=/custom/path
+```
+
+### Library Discovery
+
+When searching for libraries (e.g., `libragen list`, `libragen query`), libragen looks in:
+
+1. **Project directory** — If `.libragen/libraries/` exists in the current directory, it's searched first
+2. **Global directory** — `$LIBRAGEN_HOME/libraries` (always included)
 
 ### Project-Local Libraries
 
-To use project-specific libraries, create a `.libragen/libraries/` directory in your project:
+To install a library to a local directory instead of the global directory, use the `-p` flag (it automatically appends `.libragen/libraries`):
 
 ```bash
-mkdir -p .libragen/libraries
-libragen install ./my-lib.libragen -p .libragen/libraries
+# Install to ./my-project/.libragen/libraries
+libragen install ./my-lib.libragen -p ./my-project
 ```
 
 This is useful for:

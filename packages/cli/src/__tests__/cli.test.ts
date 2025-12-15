@@ -140,7 +140,7 @@ describe('CLI', () => {
          expect(stdout).toContain('Search a .libragen library');
          expect(stdout).toContain('--library');
          expect(stdout).toContain('--path');
-         expect(stdout).toContain('name resolution');
+         expect(stdout).toContain('Project directory');
       });
 
       it('searches library and returns results', async () => {
@@ -207,13 +207,13 @@ describe('CLI', () => {
          await runCli([
             'install',
             libraryPath,
-            '-p', libDir,
+            '-p', projectDir,
          ]);
 
          // List to see what name was installed
          const listResult = await runCli([
             'list',
-            '-p', libDir,
+            '-p', projectDir,
             '--json',
          ]);
 
@@ -226,7 +226,7 @@ describe('CLI', () => {
             'query',
             'factorial',
             '-l', installedName, // use the actual installed name
-            '-p', libDir,
+            '-p', projectDir,
             '-k', '2',
          ]);
 
@@ -247,7 +247,7 @@ describe('CLI', () => {
             'query',
             'test',
             '-l', 'nonexistent-library',
-            '-p', libDir,
+            '-p', projectDir,
          ]);
 
          expect(exitCode).toBe(1);
@@ -265,13 +265,13 @@ describe('CLI', () => {
          await runCli([
             'install',
             libraryPath,
-            '-p', libDir,
+            '-p', projectDir,
          ]);
 
          // List to get the installed name
          const listResult = await runCli([
             'list',
-            '-p', libDir,
+            '-p', projectDir,
             '--json',
          ]);
 
@@ -284,7 +284,7 @@ describe('CLI', () => {
             'query',
             'factorial',
             '-l', installedName,
-            '-p', libDir,
+            '-p', projectDir,
             '-k', '2',
             '--json',
          ]);
@@ -312,6 +312,13 @@ describe('CLI', () => {
          expect(stdout).toContain('--json');
          expect(stdout).toContain('--verbose');
          expect(stdout).toContain('--show-path');
+      });
+
+      it('supports ls alias', async () => {
+         const { stdout, exitCode } = await runCli([ 'ls', '--help' ]);
+
+         expect(exitCode).toBe(0);
+         expect(stdout).toContain('List installed libraries');
       });
 
       it('handles empty library list', async () => {
@@ -376,13 +383,13 @@ describe('CLI', () => {
          await runCli([
             'install',
             libPath,
-            '-p', libDir,
+            '-p', projectDir,
          ]);
 
          // List with --show-path
          const { stdout, exitCode } = await runCli([
             'list',
-            '-p', libDir,
+            '-p', projectDir,
             '--libraries',
             '--show-path',
          ]);
@@ -391,18 +398,17 @@ describe('CLI', () => {
          expect(stdout).toContain('Installed Libraries');
          // Should show the .libragen path
          expect(stdout).toContain('.libragen');
-         expect(stdout).toContain(libDir);
+         expect(stdout).toContain(projectDir);
       }, 60000);
 
       it('JSON output includes path and location', async () => {
          // Use the library installed in the previous test
          const projectDir = path.join(tempDir, 'list-path-test');
 
-         const libDir = path.join(projectDir, 'libs');
 
          const { stdout, exitCode } = await runCli([
             'list',
-            '-p', libDir,
+            '-p', projectDir,
             '--libraries',
             '--json',
          ]);
@@ -451,7 +457,7 @@ describe('CLI', () => {
          const { stdout, exitCode } = await runCli([
             'install',
             libraryPath,
-            '-p', libDir,
+            '-p', projectDir,
          ]);
 
          expect(exitCode).toBe(0);
@@ -508,7 +514,7 @@ describe('CLI', () => {
 
          await fs.mkdir(libDir, { recursive: true });
 
-         const { stdout, stderr, exitCode } = await runCli([ 'update', '-p', libDir ]);
+         const { stdout, stderr, exitCode } = await runCli([ 'update', '-p', emptyDir ]);
 
          expect(exitCode).toBe(0);
          // Output may go to stdout or stderr depending on ora spinner behavior

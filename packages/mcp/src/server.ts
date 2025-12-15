@@ -46,13 +46,19 @@ export const libraryPaths: LibraryPaths = {
 };
 
 /**
+ * WeakMap to associate server configurations with McpServer instances.
+ * This avoids extending the McpServer class or using any casts.
+ */
+const serverConfigs = new WeakMap<McpServer, ServerConfig>();
+
+/**
  * Update library paths based on MCP roots.
  * Called when the server receives roots from the client.
  */
 export async function updateLibraryPathsFromRoots(roots: Array<{ uri: string; name?: string }>): Promise<void> {
    const paths: string[] = [];
 
-   // Check each root for a .libragen/libraries directory
+   // Check each root for a .libragen/libraries directory (for discovery)
    for (const root of roots) {
       // Convert file:// URI to path
       let rootPath: string;
@@ -98,6 +104,9 @@ export function createServer(config: ServerConfig = {}): McpServer {
       version: VERSION,
    });
 
+   // Store config in WeakMap to avoid any casting
+   serverConfigs.set(server, config);
+
    // Register all tools
    registerSearchTool(server, config);
    registerListTool(server, config);
@@ -112,6 +121,18 @@ export function createServer(config: ServerConfig = {}): McpServer {
    registerPrompts(server);
 
    return server;
+}
+
+/**
+ * Update the embedder instance on an existing server.
+ * This allows lazy initialization and background warming.
+ */
+export function updateServerEmbedder(server: McpServer, embedder: IEmbedder): void {
+   const config = serverConfigs.get(server);
+
+   if (config) {
+      config.embedder = embedder;
+   }
 }
 
 /**

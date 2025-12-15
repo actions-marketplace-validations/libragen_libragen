@@ -37,7 +37,6 @@ describe('E2E: Multi-Library Scenarios', () => {
 
       beforeAll(async () => {
          projectDir = await createProjectDir(env, 'multi-lib-project');
-         const libDir = getProjectLibDir(projectDir);
 
          // Build and install 3 libraries
          for (const name of libraries) {
@@ -47,14 +46,14 @@ describe('E2E: Multi-Library Scenarios', () => {
                output: `${name}.libragen`,
             });
 
-            await runCli([ 'install', libPath, '-p', libDir ], env);
+            await runCli([ 'install', libPath, '-p', projectDir ], env);
          }
       }, 360000);
 
       it('lists all 3 libraries', async () => {
          const { exitCode, stdout } = await runCli([
             'list', '--json',
-            '-p', getProjectLibDir(projectDir),
+            '-p', projectDir,
          ], env);
 
          expect(exitCode).toBe(0);
@@ -90,7 +89,7 @@ describe('E2E: Multi-Library Scenarios', () => {
       it('uninstalls one library', async () => {
          const { exitCode } = await runCli([
             'uninstall', 'utils-lib',
-            '-p', getProjectLibDir(projectDir),
+            '-p', projectDir,
          ], env);
 
          expect(exitCode).toBe(0);
@@ -99,7 +98,7 @@ describe('E2E: Multi-Library Scenarios', () => {
       it('lists shows 2 remaining libraries', async () => {
          const { exitCode, stdout } = await runCli([
             'list', '--json',
-            '-p', getProjectLibDir(projectDir),
+            '-p', projectDir,
          ], env);
 
          expect(exitCode).toBe(0);
@@ -201,13 +200,13 @@ describe('E2E: Multi-Library Scenarios', () => {
             output: 'update-test.libragen',
          });
 
-         await runCli([ 'install', libPath, '-p', getProjectLibDir(projectDir) ], env);
+         await runCli([ 'install', libPath, '-p', projectDir ], env);
       }, 180000);
 
       it('update --dry-run reports status', async () => {
          const { exitCode, stdout, stderr } = await runCli([
             'update', '--dry-run',
-            '-p', getProjectLibDir(projectDir),
+            '-p', projectDir,
          ], env);
 
          expect(exitCode).toBe(0);
@@ -233,13 +232,13 @@ describe('E2E: Multi-Library Scenarios', () => {
             output: 'verbose-test.libragen',
          });
 
-         await runCli([ 'install', libPath, '-p', getProjectLibDir(projectDir) ], env);
+         await runCli([ 'install', libPath, '-p', projectDir ], env);
       }, 180000);
 
       it('list --verbose shows detailed info', async () => {
          const { exitCode, stdout } = await runCli([
             'list', '--verbose',
-            '-p', getProjectLibDir(projectDir),
+            '-p', projectDir,
          ], env);
 
          expect(exitCode).toBe(0);
