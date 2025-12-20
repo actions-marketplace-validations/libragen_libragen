@@ -26,6 +26,8 @@ export interface BuildParams {
    gitRef?: string;
    gitRepoAuthToken?: string;
    license?: string[];
+   noAstChunking?: boolean;
+   contextMode?: 'none' | 'minimal' | 'full';
    install?: boolean;
 
    /** Path to install the library to (used by worker thread) */

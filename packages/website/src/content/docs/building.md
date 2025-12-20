@@ -17,12 +17,17 @@ This processes all markdown, text, and HTML files, generating embeddings and a f
 
 ## Supported File Types
 
-| Extension | Format |
-|-----------|--------|
-| `.md` | Markdown |
-| `.txt` | Plain text |
-| `.html` | HTML (text extracted) |
-| `.mdx` | MDX (treated as markdown) |
+| Extension | Format | Chunking |
+|-----------|--------|----------|
+| `.ts`, `.tsx`, `.mts`, `.cts` | TypeScript | AST-aware |
+| `.js`, `.jsx`, `.mjs`, `.cjs` | JavaScript | AST-aware |
+| `.py`, `.pyi` | Python | AST-aware |
+| `.rs` | Rust | AST-aware |
+| `.go` | Go | AST-aware |
+| `.java` | Java | AST-aware |
+| `.md`, `.mdx` | Markdown | Text-based |
+| `.txt` | Plain text | Text-based |
+| `.html` | HTML (text extracted) | Text-based |
 
 Customize with `--include`:
 
@@ -30,7 +35,40 @@ Customize with `--include`:
 libragen build ./docs --name my-docs --include "**/*.md" "**/*.rst" "**/*.txt"
 ```
 
-## Chunking Strategy
+## AST-Aware Code Chunking
+
+For supported code files (TypeScript, JavaScript, Python, Rust, Go, Java), libragen uses AST-aware chunking by default. This produces higher-quality embeddings by:
+
+- **Respecting language boundaries** — Chunks align with functions, classes, and methods instead of arbitrary character positions
+- **Including semantic context** — Each chunk includes scope chain, imports, and sibling entities
+- **Contextualizing for embeddings** — A special contextualized text is generated that includes file path, scope, and signatures
+
+### Context Modes
+
+Control how much context is included with each chunk:
+
+```bash
+# Full context (default) - includes scope chain, imports, siblings, signatures
+libragen build ./src --name my-code --context-mode full
+
+# Minimal context - only scope chain and entity signatures
+libragen build ./src --name my-code --context-mode minimal
+
+# No context - raw code only
+libragen build ./src --name my-code --context-mode none
+```
+
+### Disabling AST Chunking
+
+If you prefer text-based chunking for code files:
+
+```bash
+libragen build ./src --name my-code --no-ast-chunking
+```
+
+Non-code files (Markdown, JSON, text, etc.) always use text-based chunking regardless of this setting.
+
+## Text-Based Chunking
 
 Documents are split into chunks for indexing. The chunking parameters affect search quality. The defaults work well for most cases, but you can tune them for specific content types.
 

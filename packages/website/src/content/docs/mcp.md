@@ -127,6 +127,8 @@ Build a searchable library from source files or git repositories.
 - `exclude` (string[], optional) - Glob patterns to exclude
 - `gitRef` (string, optional) - Git branch/tag/commit
 - `gitRepoAuthToken` (string, optional) - Auth token for private repos
+- `noAstChunking` (boolean, default: false) - Disable AST-aware chunking for code files
+- `contextMode` (string, default: "full") - Context mode for AST chunking: `none`, `minimal`, or `full`
 - `install` (boolean, default: false) - Install after building
 
 **Response fields:**

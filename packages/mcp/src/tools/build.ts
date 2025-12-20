@@ -217,6 +217,10 @@ The resulting library can be searched with libragen_search to find relevant cont
             .describe('Auth token for private git repositories (remote git sources only)'),
          license: z.array(z.string()).optional()
             .describe('SPDX license identifier(s) for the source content'),
+         noAstChunking: z.boolean().optional().default(false)
+            .describe('Disable AST-aware chunking for code files (default: false, AST chunking enabled)'),
+         contextMode: z.enum([ 'none', 'minimal', 'full' ]).optional().default('full')
+            .describe('Context mode for AST chunking: none, minimal, or full (default: full)'),
          install: z.boolean().optional().default(false)
             .describe('Install the library after building'),
       },
@@ -281,6 +285,8 @@ The resulting library can be searched with libragen_search to find relevant cont
                gitRef: params.gitRef,
                gitRepoAuthToken: params.gitRepoAuthToken,
                license: params.license,
+               noAstChunking: params.noAstChunking,
+               contextMode: params.contextMode,
                install: params.install,
                installPath,
             };

@@ -14,15 +14,65 @@ import * as path from 'path';
 import fg from 'fast-glob';
 import type { SourceFile } from './sources/files.ts';
 
+/**
+ * Information about an entity (function, class, etc.) for context.
+ */
+export interface EntityInfo {
+   name: string;
+   type: string;
+   signature?: string;
+}
+
+/**
+ * Extended entity info for entities within a chunk.
+ */
+export interface ChunkEntityInfo extends EntityInfo {
+   docstring?: string | null;
+   lineRange?: { start: number; end: number };
+   isPartial?: boolean;
+}
+
+/**
+ * Information about a sibling entity.
+ */
+export interface SiblingInfo {
+   name: string;
+   type: string;
+   position: 'before' | 'after';
+   distance: number;
+}
+
+/**
+ * Information about an import statement.
+ */
+export interface ImportInfo {
+   name: string;
+   source: string;
+   isDefault?: boolean;
+   isNamespace?: boolean;
+}
+
+/**
+ * Semantic context from AST-aware chunking.
+ */
+export interface CodeContext {
+   scope: EntityInfo[];
+   entities: ChunkEntityInfo[];
+   siblings: SiblingInfo[];
+   imports: ImportInfo[];
+}
+
 export interface ChunkMetadata {
    sourceFile: string;
    startLine?: number;
    endLine?: number;
    language?: string;
+   codeContext?: CodeContext;
 }
 
 export interface Chunk {
    content: string;
+   embeddingContent?: string;
    metadata: ChunkMetadata;
 }
 

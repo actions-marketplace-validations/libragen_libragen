@@ -38,6 +38,7 @@
       "@huggingface/transformers": "^3.5.1",
       "@langchain/textsplitters": "^0.1.0",
       "better-sqlite3": "^11.9.1",
+      "code-chunk": "0.1.11",
       "fast-glob": "^3.3.3",
       "isomorphic-git": "1.35.1",
       "sqlite-vec": "^0.1.6"

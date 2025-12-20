@@ -83,5 +83,6 @@ store.close();
 | [`Searcher`](https://libragen.dev/docs/api#searcher) | Hybrid vector + keyword search with optional reranking |
 | [`VectorStore`](https://libragen.dev/docs/api#vectorstore) | SQLite-based storage with sqlite-vec and FTS5 |
 | [`LibraryManager`](https://libragen.dev/docs/api#librarymanager) | Install, uninstall, and discover libraries |
+| [`CodeChunker`](https://libragen.dev/docs/api#codechunker) | AST-aware code chunking with semantic context |
 
 **[Full API reference →](https://libragen.dev/docs/api)**

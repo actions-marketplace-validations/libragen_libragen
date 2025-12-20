@@ -71,7 +71,7 @@ Every `.libragen` file contains metadata describing its contents. This is stored
     "dimensions": 384
   },
   "chunking": {
-    "strategy": "recursive",
+    "strategy": "ast+recursive",
     "chunkSize": 512,
     "chunkOverlap": 50
   },

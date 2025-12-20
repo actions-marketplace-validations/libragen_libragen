@@ -45,6 +45,8 @@ libragen build <source> [options]
 | `--no-default-excludes` | boolean | `false` | Disable default exclusions |
 | `--chunk-size` | number | `1000` | Target chunk size in characters |
 | `--chunk-overlap` | number | `100` | Overlap between chunks |
+| `--no-ast-chunking` | boolean | `false` | Disable AST-aware chunking for code files |
+| `--context-mode` | string | `full` | Context mode for AST chunking: `none`, `minimal`, or `full` |
 | `--license` | string[] | Auto-detected | SPDX license identifier(s) for the source |
 | `--git-ref` | string | — | Git branch, tag, or commit (git sources only) |
 | `--git-repo-auth-token` | string | — | Auth token for private repos |
@@ -81,6 +83,12 @@ libragen build ./docs --name my-docs --license MIT
 
 # Build with multiple licenses (dual licensing)
 libragen build ./docs --name my-docs --license MIT Apache-2.0
+
+# Disable AST chunking (use text-based chunking only)
+libragen build ./src --name my-code --no-ast-chunking
+
+# Use minimal context for AST chunking (smaller chunks)
+libragen build ./src --name my-code --context-mode minimal
 ```
 
 #### License Detection
@@ -92,6 +100,23 @@ When building from git repositories, licenses are automatically detected from LI
 - **Explicit `--license`**: Always takes precedence
 
 **Supported licenses:** MIT, Apache-2.0, GPL-3.0, GPL-2.0, LGPL-3.0, LGPL-2.1, BSD-3-Clause, BSD-2-Clause, ISC, Unlicense, MPL-2.0, CC0-1.0, AGPL-3.0
+
+#### AST-Aware Code Chunking
+
+By default, libragen uses AST-aware chunking for supported code files. This produces higher-quality embeddings by:
+
+- **Respecting language boundaries** — Chunks align with functions, classes, and methods instead of arbitrary character positions
+- **Including semantic context** — Each chunk includes scope chain, imports, and sibling entities
+- **Contextualizing for embeddings** — A special `contextualizedText` is generated that includes file path, scope, and signatures
+
+**Supported languages:** TypeScript, JavaScript, Python, Rust, Go, Java
+
+**Context modes:**
+- `full` (default) — Include all available context (scope chain, imports, siblings, signatures)
+- `minimal` — Include only essential context (scope chain, entity signatures)
+- `none` — No additional context (raw code only)
+
+Non-code files (Markdown, JSON, text, etc.) always use text-based chunking.
 
 ---
 
