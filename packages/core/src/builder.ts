@@ -12,6 +12,8 @@ import { Embedder } from './embedder.ts';
 import type { IEmbedder } from './embedder.ts';
 import { Chunker } from './chunker.ts';
 import type { Chunk } from './chunker.ts';
+import { CodeChunker } from './code-chunker.ts';
+import type { ContextMode } from './code-chunker.ts';
 import { VectorStore } from './store.ts';
 import { GitSource, isGitUrl, parseGitUrl, getAuthToken } from './sources/index.ts';
 import type { GitSourceResult } from './sources/index.ts';
@@ -80,6 +82,12 @@ export interface BuildOptions {
 
    /** SPDX license identifier(s) for the source content */
    license?: string[];
+
+   /** Disable AST-aware chunking for code files (default: false, AST chunking enabled) */
+   noAstChunking?: boolean;
+
+   /** Context mode for AST chunking: 'none', 'minimal', or 'full' (default: 'full') */
+   contextMode?: ContextMode;
 }
 
 /**
@@ -513,6 +521,8 @@ export class Builder {
 
    /**
     * Chunk source files into smaller pieces for embedding.
+    * Uses AST-aware chunking for supported code files (unless disabled), falling back to
+    * text-based chunking for unsupported files.
     *
     * @param resolved - Resolved source information
     * @param opts - Build options
@@ -530,23 +540,48 @@ export class Builder {
    ): Promise<Chunk[]> {
       progress({ phase: 'chunking', progress: 30, message: 'Chunking source files...' });
 
-      const chunker = new Chunker({ chunkSize, chunkOverlap });
+      const useAstChunking = !opts.noAstChunking,
+            contextMode = opts.contextMode ?? 'full';
+
+      const textChunker = new Chunker({ chunkSize, chunkOverlap });
+
+      const codeChunker = useAstChunking
+         ? new CodeChunker({ maxChunkSize: chunkSize, contextMode })
+         : null;
 
       let chunks: Chunk[];
 
       if (resolved.gitResult) {
-         chunks = await chunker.chunkSourceFiles(resolved.gitResult.files);
+         chunks = await this._chunkSourceFiles(
+            resolved.gitResult.files,
+            textChunker,
+            codeChunker
+         );
       } else {
          const stats = await fs.stat(resolved.sourcePath);
 
          if (stats.isDirectory()) {
-            chunks = await chunker.chunkDirectory(resolved.sourcePath, {
+            chunks = await textChunker.chunkDirectory(resolved.sourcePath, {
                patterns: resolved.includePatterns,
                ignore: opts.exclude,
                useDefaultIgnore: !opts.noDefaultExcludes,
             });
+
+            // If AST chunking is enabled, re-chunk code files with CodeChunker
+            if (codeChunker) {
+               chunks = await this._enhanceChunksWithAst(chunks, codeChunker);
+            }
+         } else if (codeChunker && CodeChunker.isSupported(resolved.sourcePath)) {
+            // Single file with AST chunking
+            const astChunks = await codeChunker.tryChunkText(
+               await fs.readFile(resolved.sourcePath, 'utf-8'),
+               resolved.sourcePath
+            );
+
+            chunks = astChunks ?? await textChunker.chunkFile(resolved.sourcePath);
          } else {
-            chunks = await chunker.chunkFile(resolved.sourcePath);
+            // Single file without AST chunking
+            chunks = await textChunker.chunkFile(resolved.sourcePath);
          }
       }
 
@@ -580,7 +615,8 @@ export class Builder {
 
       const startTime = Date.now();
 
-      const contents = chunks.map((c) => { return c.content; });
+      // Use embeddingContent when available, fall back to raw content
+      const contents = chunks.map((c) => { return c.embeddingContent ?? c.content; });
 
       const batchSize = 50;
 
@@ -667,7 +703,7 @@ export class Builder {
             dimensions: 384,
          },
          chunking: {
-            strategy: 'recursive',
+            strategy: opts.noAstChunking ? 'recursive' : 'ast+recursive',
             chunkSize,
             chunkOverlap,
          },
@@ -713,6 +749,89 @@ export class Builder {
 
       await fs.mkdir(output, { recursive: true });
       return path.join(output, defaultFilename);
+   }
+
+   /**
+    * Chunk source files using AST chunking for supported files, falling back to text
+    * chunking.
+    */
+   private async _chunkSourceFiles(
+      files: { relativePath: string; content: string }[],
+      textChunker: Chunker,
+      codeChunker: CodeChunker | null
+   ): Promise<Chunk[]> {
+      const allChunks: Chunk[] = [];
+
+      for (const file of files) {
+         try {
+            let chunks: Chunk[] | null = null;
+
+            // Try AST chunking first for supported files
+            if (codeChunker && CodeChunker.isSupported(file.relativePath)) {
+               chunks = await codeChunker.tryChunkText(file.content, file.relativePath);
+            }
+
+            // Fall back to text chunking
+            if (!chunks) {
+               chunks = await textChunker.chunkText(file.content, file.relativePath);
+            }
+
+            allChunks.push(...chunks);
+         } catch(_e) {
+            // Skip files that can't be chunked
+            continue;
+         }
+      }
+
+      return allChunks;
+   }
+
+   /**
+    * Re-chunk code files in an existing chunk array using AST chunking.
+    * Groups chunks by source file, re-chunks supported files, and merges results.
+    */
+   private async _enhanceChunksWithAst(
+      chunks: Chunk[],
+      codeChunker: CodeChunker
+   ): Promise<Chunk[]> {
+      // Group chunks by source file
+      const chunksByFile = new Map<string, Chunk[]>();
+
+      for (const chunk of chunks) {
+         const file = chunk.metadata.sourceFile,
+               existing = chunksByFile.get(file) ?? [];
+
+         existing.push(chunk);
+         chunksByFile.set(file, existing);
+      }
+
+      const result: Chunk[] = [];
+
+      for (const [ file, fileChunks ] of chunksByFile) {
+         // If file supports AST chunking, reconstruct content and re-chunk
+         if (CodeChunker.isSupported(file)) {
+            // Reconstruct file content from chunks (sorted by line number)
+            const sortedChunks = [ ...fileChunks ].sort((a, b) => {
+               return (a.metadata.startLine ?? 0) - (b.metadata.startLine ?? 0);
+            });
+
+            const content = sortedChunks.map((c) => { return c.content; }).join('\n');
+
+            const astChunks = await codeChunker.tryChunkText(content, file);
+
+            if (astChunks) {
+               result.push(...astChunks);
+            } else {
+               // AST chunking failed, keep original chunks
+               result.push(...fileChunks);
+            }
+         } else {
+            // Keep original chunks for non-code files
+            result.push(...fileChunks);
+         }
+      }
+
+      return result;
    }
 
 }

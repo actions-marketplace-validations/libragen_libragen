@@ -99,6 +99,8 @@ await builder.build('./docs', { name: 'my-docs' }, (progress) => {
 | `exclude` | string[] | — | Glob patterns to exclude |
 | `gitRef` | string | — | Git branch/tag/commit |
 | `license` | string[] | — | SPDX license identifiers |
+| `noAstChunking` | boolean | `false` | Disable AST-aware chunking for code files |
+| `contextMode` | `'none' \| 'minimal' \| 'full'` | `'full'` | Context mode for AST chunking |
 
 #### Build Result
 
@@ -332,6 +334,82 @@ const chunks = chunker.chunk('Long document content...', {
 |--------|------|---------|-------------|
 | `chunkSize` | number | `512` | Target chunk size in tokens |
 | `chunkOverlap` | number | `50` | Overlap between chunks |
+
+---
+
+### `CodeChunker`
+
+AST-aware code chunking for supported programming languages. Produces higher-quality embeddings by respecting language boundaries and including semantic context.
+
+```typescript
+import { CodeChunker } from '@libragen/core';
+
+const chunker = new CodeChunker({
+  maxChunkSize: 1500,
+  contextMode: 'full',
+  overlapLines: 0,
+});
+
+// Check if a file is supported
+CodeChunker.isSupported('app.ts');  // true
+CodeChunker.isSupported('README.md');  // false
+
+// Detect language from file path
+CodeChunker.detectLanguage('app.ts');  // 'typescript'
+
+// Get all supported extensions
+CodeChunker.getSupportedExtensions();  // ['.ts', '.tsx', '.js', ...]
+
+// Chunk code with semantic context
+const chunks = await chunker.chunkText(code, 'app.ts');
+
+// Each chunk includes:
+// - content: raw code
+// - embeddingContent: contextualized text for embeddings
+// - metadata.codeContext: scope chain, entities, imports, siblings
+```
+
+#### Supported Languages
+
+| Language | Extensions |
+|----------|------------|
+| TypeScript | `.ts`, `.tsx`, `.mts`, `.cts` |
+| JavaScript | `.js`, `.jsx`, `.mjs`, `.cjs` |
+| Python | `.py`, `.pyi` |
+| Rust | `.rs` |
+| Go | `.go` |
+| Java | `.java` |
+
+#### Constructor Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxChunkSize` | number | `1500` | Maximum chunk size in characters |
+| `contextMode` | `'none' \| 'minimal' \| 'full'` | `'full'` | How much context to include |
+| `overlapLines` | number | `0` | Lines to overlap between chunks |
+
+#### Context Modes
+
+- **`full`** — Include scope chain, imports, sibling entities, and signatures
+- **`minimal`** — Include only scope chain and entity signatures
+- **`none`** — Raw code only, no additional context
+
+#### Methods
+
+| Method | Description |
+|--------|-------------|
+| `chunkText(content, filePath)` | Chunk code string with AST awareness |
+| `chunkFile(filePath)` | Chunk a file from the filesystem |
+| `chunkSourceFiles(files)` | Chunk multiple source files |
+| `tryChunkText(content, filePath)` | Like `chunkText` but returns `null` on failure |
+
+#### Static Methods
+
+| Method | Description |
+|--------|-------------|
+| `isSupported(filePath)` | Check if file type supports AST chunking |
+| `detectLanguage(filePath)` | Get language from file extension |
+| `getSupportedExtensions()` | Get all supported file extensions |
 
 ---
 

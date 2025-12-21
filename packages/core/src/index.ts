@@ -38,7 +38,19 @@ export { Embedder } from './embedder.ts';
 export type { IEmbedder, EmbedderConfig, EmbedProgress, ProgressCallback, ModelLoadCallback } from './embedder.ts';
 
 export { Chunker } from './chunker.ts';
-export type { Chunk, ChunkMetadata, ChunkerConfig } from './chunker.ts';
+export type {
+   Chunk,
+   ChunkMetadata,
+   ChunkerConfig,
+   CodeContext,
+   EntityInfo,
+   ChunkEntityInfo,
+   SiblingInfo,
+   ImportInfo,
+} from './chunker.ts';
+
+export { CodeChunker } from './code-chunker.ts';
+export type { CodeChunkerConfig, CodeChunkerLanguage, ContextMode } from './code-chunker.ts';
 
 // ============================================================================
 // Vector Store & Search

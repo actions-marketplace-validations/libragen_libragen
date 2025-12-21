@@ -12,6 +12,7 @@ import type { Chunk } from './chunker.ts';
 export interface StoredChunk {
    id: number;
    content: string;
+   embeddingContent?: string;
    embedding?: Float32Array;
    sourceFile: string;
    sourceType: string;
@@ -26,6 +27,7 @@ export interface StoredChunk {
 export interface SearchResult {
    id: number;
    content: string;
+   embeddingContent?: string;
    score: number;
    sourceFile: string;
    sourceType: string;
@@ -89,6 +91,7 @@ export class VectorStore {
          CREATE TABLE IF NOT EXISTS chunks (
             id INTEGER PRIMARY KEY,
             content TEXT NOT NULL,
+            embedding_content TEXT,
             embedding BLOB NOT NULL,
             source_file TEXT NOT NULL,
             source_type TEXT NOT NULL DEFAULT 'file',
@@ -167,14 +170,20 @@ export class VectorStore {
 
       const insertChunk = this._db.prepare(`
          INSERT INTO chunks (
-            content, embedding, source_file, source_type, source_ref,
+            content, embedding_content, embedding, source_file, source_type, source_ref,
             content_version, start_line, end_line, language, metadata
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
+
+      // Serialize codeContext to metadata JSON if present
+      const metadataJson = chunk.metadata.codeContext
+         ? JSON.stringify({ codeContext: chunk.metadata.codeContext })
+         : null;
 
       const result = insertChunk.run(
          chunk.content,
+         chunk.embeddingContent ?? null,
          Buffer.from(embedding.buffer),
          chunk.metadata.sourceFile,
          options.sourceType ?? 'file',
@@ -183,7 +192,7 @@ export class VectorStore {
          chunk.metadata.startLine,
          chunk.metadata.endLine,
          chunk.metadata.language,
-         null
+         metadataJson
       );
 
       return Number(result.lastInsertRowid);
@@ -209,10 +218,10 @@ export class VectorStore {
 
       const insertChunk = this._db.prepare(`
          INSERT INTO chunks (
-            content, embedding, source_file, source_type, source_ref,
+            content, embedding_content, embedding, source_file, source_type, source_ref,
             content_version, start_line, end_line, language, metadata
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const ids: number[] = [];
@@ -222,8 +231,14 @@ export class VectorStore {
             const chunk = chunks[i],
                   embedding = embeddings[i];
 
+            // Serialize codeContext to metadata JSON if present
+            const metadataJson = chunk.metadata.codeContext
+               ? JSON.stringify({ codeContext: chunk.metadata.codeContext })
+               : null;
+
             const result = insertChunk.run(
                chunk.content,
+               chunk.embeddingContent ?? null,
                Buffer.from(embedding.buffer),
                chunk.metadata.sourceFile,
                options.sourceType ?? 'file',
@@ -232,7 +247,7 @@ export class VectorStore {
                chunk.metadata.startLine,
                chunk.metadata.endLine,
                chunk.metadata.language,
-               null
+               metadataJson
             );
 
             ids.push(Number(result.lastInsertRowid));
@@ -485,7 +500,7 @@ export class VectorStore {
 
       const stmt = this._db.prepare(`
          SELECT
-            id, content, source_file, source_type, source_ref,
+            id, content, embedding_content, source_file, source_type, source_ref,
             content_version, start_line, end_line, language, metadata
          FROM chunks
          WHERE id = ?
@@ -494,6 +509,7 @@ export class VectorStore {
       const row = stmt.get(id) as {
          id: number;
          content: string;
+         embedding_content: string | null;
          source_file: string;
          source_type: string;
          source_ref: string | null;
@@ -511,6 +527,7 @@ export class VectorStore {
       return {
          id: row.id,
          content: row.content,
+         embeddingContent: row.embedding_content ?? undefined,
          sourceFile: row.source_file,
          sourceType: row.source_type,
          sourceRef: row.source_ref ?? undefined,
@@ -552,7 +569,7 @@ export class VectorStore {
       if (before > 0) {
          const beforeStmt = this._db.prepare(`
             SELECT
-               id, content, source_file, source_type, source_ref,
+               id, content, embedding_content, source_file, source_type, source_ref,
                content_version, start_line, end_line, language, metadata
             FROM chunks
             WHERE source_file = ? AND end_line < ?
@@ -563,6 +580,7 @@ export class VectorStore {
          const beforeRows = beforeStmt.all(sourceFile, startLine, before) as Array<{
             id: number;
             content: string;
+            embedding_content: string | null;
             source_file: string;
             source_type: string;
             source_ref: string | null;
@@ -587,7 +605,7 @@ export class VectorStore {
 
          const afterStmt = this._db.prepare(`
             SELECT
-               id, content, source_file, source_type, source_ref,
+               id, content, embedding_content, source_file, source_type, source_ref,
                content_version, start_line, end_line, language, metadata
             FROM chunks
             WHERE source_file = ? AND start_line > ?
@@ -598,6 +616,7 @@ export class VectorStore {
          const afterRows = afterStmt.all(sourceFile, refEndLine, after) as Array<{
             id: number;
             content: string;
+            embedding_content: string | null;
             source_file: string;
             source_type: string;
             source_ref: string | null;
@@ -749,6 +768,7 @@ export class VectorStore {
    private _rowToStoredChunk(row: {
       id: number;
       content: string;
+      embedding_content: string | null;
       source_file: string;
       source_type: string;
       source_ref: string | null;
@@ -761,6 +781,7 @@ export class VectorStore {
       return {
          id: row.id,
          content: row.content,
+         embeddingContent: row.embedding_content ?? undefined,
          sourceFile: row.source_file,
          sourceType: row.source_type,
          sourceRef: row.source_ref ?? undefined,

@@ -38,6 +38,8 @@ interface BuildOptions {
    gitRef?: string;
    gitRepoAuthToken?: string;
    license?: string[];
+   astChunking?: boolean;
+   contextMode?: string;
 }
 
 export const buildCommand = new Command('build')
@@ -63,6 +65,8 @@ export const buildCommand = new Command('build')
    .option('--git-ref <ref>', 'Git branch, tag, or commit to checkout (remote git sources only)')
    .option('--git-repo-auth-token <token>', 'Auth token for private git repositories (remote git sources only)', undefined)
    .option('--license <licenses...>', 'SPDX license identifier(s) for the source content')
+   .option('--no-ast-chunking', 'Disable AST-aware chunking for code files')
+   .option('--context-mode <mode>', 'Context mode for AST chunking: none, minimal, or full', 'full')
    .action(async (source: string, options: BuildOptions) => {
       const spinner = ora();
 
@@ -170,6 +174,8 @@ export const buildCommand = new Command('build')
             gitRef: options.gitRef,
             gitRepoAuthToken: options.gitRepoAuthToken,
             license: options.license,
+            noAstChunking: options.astChunking === false,
+            contextMode: options.contextMode as 'none' | 'minimal' | 'full' | undefined,
          };
 
          const result = await builder.build(source, buildOptions, handleBuildProgress);

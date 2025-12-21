@@ -93,6 +93,8 @@ async function executeBuild(params: BuildParams): Promise<void> {
       gitRef,
       gitRepoAuthToken,
       license,
+      noAstChunking = false,
+      contextMode = 'full',
       install = false,
    } = params;
 
@@ -123,6 +125,8 @@ async function executeBuild(params: BuildParams): Promise<void> {
          gitRef,
          gitRepoAuthToken,
          license,
+         noAstChunking,
+         contextMode: contextMode as 'none' | 'minimal' | 'full',
       };
 
       const handleProgress = (progress: BuildProgress): void => {
