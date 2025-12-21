@@ -4,54 +4,73 @@
 
 /* eslint-disable no-console, no-process-exit */
 
-import { Command } from 'commander';
+import { Flags } from '@oclif/core';
 import chalk from 'chalk';
-import * as path from 'path';
 import { LibraryManager, formatBytes } from '@libragen/core';
 import type { InstalledLibrary, InstalledCollection } from '@libragen/core';
+import { BaseCommand } from '../base-command.ts';
 
-interface ListOptions {
-   json?: boolean;
-   verbose?: boolean;
-   showPath?: boolean;
-   path?: string[];
-   libraries?: boolean;
-   collections?: boolean;
-}
+export default class List extends BaseCommand {
+   public static override summary = 'List installed libraries and collections';
 
-export const listCommand = new Command('list')
-   .alias('l')
-   .alias('ls')
-   .description('List installed libraries and collections')
-   .option('--json', 'Output as JSON')
-   .option('-v, --verbose', 'Show detailed information')
-   .option('--show-path', 'Show the file path for each library')
-   .option('-p, --path <paths...>', 'Project directory (will search <path>/.libragen/libraries)')
-   .option('--libraries', 'Show only libraries')
-   .option('--collections', 'Show only collections')
-   .action(async (options: ListOptions) => {
+   public static override description = `Display all installed libragen libraries and collections.
+Shows library metadata including version, description, and location.`;
+
+   public static override examples = [
+      '<%= config.bin %> <%= command.id %>',
+      '<%= config.bin %> <%= command.id %> --verbose',
+      '<%= config.bin %> <%= command.id %> --json',
+      '<%= config.bin %> <%= command.id %> --libraries',
+   ];
+
+   public static override flags = {
+      json: Flags.boolean({
+         description: 'Output as JSON',
+         default: false,
+      }),
+      verbose: Flags.boolean({
+         char: 'v',
+         description: 'Show detailed information',
+         default: false,
+      }),
+      'show-path': Flags.boolean({
+         description: 'Show the file path for each library',
+         default: false,
+      }),
+      path: Flags.string({
+         char: 'p',
+         description: 'Project directory (will search <path>/.libragen/libraries)',
+         multiple: true,
+      }),
+      libraries: Flags.boolean({
+         description: 'Show only libraries',
+         default: false,
+      }),
+      collections: Flags.boolean({
+         description: 'Show only collections',
+         default: false,
+      }),
+   };
+
+   public static override aliases = [ 'l', 'ls' ];
+
+   public async run(): Promise<void> {
+      const { flags } = await this.parse(List);
+
       try {
-         // If explicit paths provided, transform them to
-         // .libragen/libraries subdirectories
-         let managerOptions: { paths: string[] } | undefined;
+         const transformedPaths = this.transformPaths(flags.path);
 
-         if (options.path) {
-            const transformedPaths = options.path.map((p) => {
-               return path.join(p, '.libragen', 'libraries');
-            });
-
-            managerOptions = { paths: transformedPaths };
-         }
+         const managerOptions = transformedPaths ? { paths: transformedPaths } : undefined;
 
          const manager = new LibraryManager(managerOptions);
 
-         const showLibraries = !options.collections || options.libraries,
-               showCollections = !options.libraries || options.collections;
+         const showLibraries = !flags.collections || flags.libraries,
+               showCollections = !flags.libraries || flags.collections;
 
          const libraries = showLibraries ? await manager.listInstalled() : [],
                collections = showCollections ? await manager.listCollections() : [];
 
-         if (options.json) {
+         if (flags.json) {
             console.log(JSON.stringify({ libraries, collections }, null, 2));
             return;
          }
@@ -59,106 +78,105 @@ export const listCommand = new Command('list')
          const hasContent = libraries.length > 0 || collections.length > 0;
 
          if (!hasContent) {
-            printEmptyMessage();
+            this.printEmptyMessage();
             return;
          }
 
-         // Show collections
          if (showCollections && collections.length > 0) {
-            printCollections(collections, options.verbose);
+            this.printCollections(collections, flags.verbose);
          }
 
-         // Show libraries
          if (showLibraries && libraries.length > 0) {
-            printLibraries(libraries, options.verbose, options.showPath);
+            this.printLibraries(libraries, flags.verbose, flags['show-path']);
          }
       } catch(error) {
          console.error(chalk.red(`\nError: ${error instanceof Error ? error.message : String(error)}`));
          process.exit(1);
       }
-   });
+   }
 
-function printEmptyMessage(): void {
-   console.log(chalk.yellow('\nNo libraries or collections installed.\n'));
-   console.log('Install libraries with:');
-   console.log(chalk.cyan('  libragen install <file.libragen>'));
-   console.log('');
-   console.log('Install collections with:');
-   console.log(chalk.cyan('  libragen install <collection.json>'));
-   console.log('');
-   console.log('Or build a library with:');
-   console.log(chalk.cyan('  libragen build <source>'));
-   console.log('');
-}
-
-function printCollections(collections: InstalledCollection[], verbose?: boolean): void {
-   console.log(chalk.bold(`\n📦 Installed Collections (${collections.length})\n`));
-
-   for (const col of collections) {
-      console.log(`  ${chalk.bold(col.name)} ${col.version ? chalk.dim(`v${col.version}`) : ''}`);
-      console.log(`    ${chalk.dim('Libraries:')} ${col.libraries.length}`);
-
-      if (verbose) {
-         printCollectionDetails(col);
-      }
-
+   private printEmptyMessage(): void {
+      console.log(chalk.yellow('\nNo libraries or collections installed.\n'));
+      console.log('Install libraries with:');
+      console.log(chalk.cyan('  libragen install <file.libragen>'));
+      console.log('');
+      console.log('Install collections with:');
+      console.log(chalk.cyan('  libragen install <collection.json>'));
+      console.log('');
+      console.log('Or build a library with:');
+      console.log(chalk.cyan('  libragen build <source>'));
       console.log('');
    }
-}
 
-function printCollectionDetails(col: InstalledCollection): void {
-   console.log(`    ${chalk.dim('Source:')} ${col.source}`);
-   console.log(`    ${chalk.dim('Installed:')} ${col.installedAt}`);
+   private printCollections(collections: InstalledCollection[], verbose: boolean): void {
+      console.log(chalk.bold(`\n📦 Installed Collections (${collections.length})\n`));
 
-   if (col.libraries.length > 0) {
-      console.log(`    ${chalk.dim('Includes:')} ${col.libraries.join(', ')}`);
-   }
-}
+      for (const col of collections) {
+         console.log(`  ${chalk.bold(col.name)} ${col.version ? chalk.dim(`v${col.version}`) : ''}`);
+         console.log(`    ${chalk.dim('Libraries:')} ${col.libraries.length}`);
 
-function printLibraries(libraries: InstalledLibrary[], verbose?: boolean, showPath?: boolean): void {
-   console.log(chalk.bold(`\n📚 Installed Libraries (${libraries.length})\n`));
+         if (verbose) {
+            this.printCollectionDetails(col);
+         }
 
-   for (const lib of libraries) {
-      const locationBadge = lib.location === 'project'
-         ? chalk.blue('[project]')
-         : chalk.dim('[global]');
-
-      console.log(`  ${chalk.bold(lib.name)} ${chalk.dim(`v${lib.version}`)} ${locationBadge}`);
-
-      if (showPath) {
-         console.log(`    ${chalk.dim(lib.path)}`);
+         console.log('');
       }
-
-      if (lib.contentVersion) {
-         console.log(`    ${chalk.dim('Content:')} ${lib.contentVersion}`);
-      }
-
-      if (lib.description) {
-         console.log(`    ${chalk.dim(lib.description)}`);
-      }
-
-      if (verbose) {
-         printLibraryDetails(lib);
-      }
-
-      console.log('');
-   }
-}
-
-function printLibraryDetails(lib: InstalledLibrary): void {
-   console.log(`    ${chalk.dim('Path:')} ${lib.path}`);
-   console.log(`    ${chalk.dim('Chunks:')} ${lib.metadata.stats.chunkCount}`);
-   console.log(`    ${chalk.dim('Size:')} ${formatBytes(lib.metadata.stats.fileSize)}`);
-
-   if (lib.metadata.keywords?.length) {
-      console.log(`    ${chalk.dim('Keywords:')} ${lib.metadata.keywords.join(', ')}`);
    }
 
-   if (lib.metadata.programmingLanguages?.length) {
-      console.log(`    ${chalk.dim('Programming Languages:')} ${lib.metadata.programmingLanguages.join(', ')}`);
+   private printCollectionDetails(col: InstalledCollection): void {
+      console.log(`    ${chalk.dim('Source:')} ${col.source}`);
+      console.log(`    ${chalk.dim('Installed:')} ${col.installedAt}`);
+
+      if (col.libraries.length > 0) {
+         console.log(`    ${chalk.dim('Includes:')} ${col.libraries.join(', ')}`);
+      }
    }
 
-   if (lib.metadata.textLanguages?.length) {
-      console.log(`    ${chalk.dim('Text Languages:')} ${lib.metadata.textLanguages.join(', ')}`);
+   private printLibraries(libraries: InstalledLibrary[], verbose: boolean, showPath: boolean): void {
+      console.log(chalk.bold(`\n📚 Installed Libraries (${libraries.length})\n`));
+
+      for (const lib of libraries) {
+         const locationBadge = lib.location === 'project'
+            ? chalk.blue('[project]')
+            : chalk.dim('[global]');
+
+         console.log(`  ${chalk.bold(lib.name)} ${chalk.dim(`v${lib.version}`)} ${locationBadge}`);
+
+         if (showPath) {
+            console.log(`    ${chalk.dim(lib.path)}`);
+         }
+
+         if (lib.contentVersion) {
+            console.log(`    ${chalk.dim('Content:')} ${lib.contentVersion}`);
+         }
+
+         if (lib.description) {
+            console.log(`    ${chalk.dim(lib.description)}`);
+         }
+
+         if (verbose) {
+            this.printLibraryDetails(lib);
+         }
+
+         console.log('');
+      }
+   }
+
+   private printLibraryDetails(lib: InstalledLibrary): void {
+      console.log(`    ${chalk.dim('Path:')} ${lib.path}`);
+      console.log(`    ${chalk.dim('Chunks:')} ${lib.metadata.stats.chunkCount}`);
+      console.log(`    ${chalk.dim('Size:')} ${formatBytes(lib.metadata.stats.fileSize)}`);
+
+      if (lib.metadata.keywords?.length) {
+         console.log(`    ${chalk.dim('Keywords:')} ${lib.metadata.keywords.join(', ')}`);
+      }
+
+      if (lib.metadata.programmingLanguages?.length) {
+         console.log(`    ${chalk.dim('Programming Languages:')} ${lib.metadata.programmingLanguages.join(', ')}`);
+      }
+
+      if (lib.metadata.textLanguages?.length) {
+         console.log(`    ${chalk.dim('Text Languages:')} ${lib.metadata.textLanguages.join(', ')}`);
+      }
    }
 }

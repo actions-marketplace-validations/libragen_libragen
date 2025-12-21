@@ -4,10 +4,8 @@
 
 /* eslint-disable no-console, no-process-exit */
 
-import { Command } from 'commander';
-import ora from 'ora';
+import { Args, Flags } from '@oclif/core';
 import chalk from 'chalk';
-import * as path from 'path';
 import {
    LibraryManager,
    CollectionClient,
@@ -15,58 +13,56 @@ import {
    performUpdate,
 } from '@libragen/core';
 import type { UpdateCandidate } from '@libragen/core';
+import { BaseCommand } from '../base-command.ts';
 
-interface UpdateOptions {
-   path?: string[];
-   force?: boolean;
-   dryRun?: boolean;
-}
+export default class Update extends BaseCommand {
+   public static override summary = 'Update libraries from their collections';
 
-function displayUpdates(updates: UpdateCandidate[]): void {
-   console.log(chalk.bold('\nUpdates available:'));
-   console.log('');
+   public static override description = `Update installed libraries to newer versions from their collections.
+Only works for libraries that were installed from collections.`;
 
-   for (const update of updates) {
-      const versionChange = update.currentVersion === update.newVersion
-         ? chalk.dim(update.currentVersion)
-         : `${chalk.dim(update.currentVersion)} → ${chalk.green(update.newVersion)}`;
+   public static override examples = [
+      '<%= config.bin %> <%= command.id %>',
+      '<%= config.bin %> <%= command.id %> next.js',
+      '<%= config.bin %> <%= command.id %> --dry-run',
+   ];
 
-      let contentChange = '';
+   public static override args = {
+      name: Args.string({
+         description: 'Library name to update (updates all collection libraries if omitted)',
+         required: false,
+      }),
+   };
 
-      if (update.newContentVersion && update.currentContentVersion !== update.newContentVersion) {
-         const current = update.currentContentVersion || 'unknown';
+   public static override flags = {
+      path: Flags.string({
+         char: 'p',
+         description: 'Project directory (will search <path>/.libragen/libraries)',
+         multiple: true,
+      }),
+      force: Flags.boolean({
+         char: 'f',
+         description: 'Force update even if versions match',
+         default: false,
+      }),
+      'dry-run': Flags.boolean({
+         char: 'n',
+         description: 'Show what would be updated without making changes',
+         default: false,
+      }),
+   };
 
-         contentChange = ` (content: ${chalk.dim(current)} → ${chalk.green(update.newContentVersion)})`;
-      }
+   public static override aliases = [ 'up' ];
 
-      console.log(`  ${chalk.bold(update.name)} ${versionChange}${contentChange}`);
-   }
+   public async run(): Promise<void> {
+      const { args, flags } = await this.parse(Update);
 
-   console.log('');
-}
-
-export const updateCommand = new Command('update')
-   .alias('up')
-   .description('Update libraries from their collections (only works for libraries installed from collections)')
-   .argument('[name]', 'Library name to update (updates all collection libraries if omitted)')
-   .option('-p, --path <paths...>', 'Project directory (will search <path>/.libragen/libraries)')
-   .option('-f, --force', 'Force update even if versions match')
-   .option('-n, --dry-run', 'Show what would be updated without making changes')
-   .action(async (name: string | undefined, options: UpdateOptions) => {
-      const spinner = ora();
+      const spinner = this.createSpinner();
 
       try {
-         // If explicit paths provided, transform them to
-         // .libragen/libraries subdirectories
-         let managerOptions: { paths: string[] } | undefined;
+         const transformedPaths = this.transformPaths(flags.path);
 
-         if (options.path) {
-            const transformedPaths = options.path.map((p) => {
-               return path.join(p, '.libragen', 'libraries');
-            });
-
-            managerOptions = { paths: transformedPaths };
-         }
+         const managerOptions = transformedPaths ? { paths: transformedPaths } : undefined;
 
          const manager = new LibraryManager(managerOptions);
 
@@ -74,7 +70,6 @@ export const updateCommand = new Command('update')
 
          await client.loadConfig();
 
-         // Get installed libraries
          spinner.start('Checking installed libraries...');
 
          const installed = await manager.listInstalled();
@@ -84,22 +79,20 @@ export const updateCommand = new Command('update')
             return;
          }
 
-         // Filter by name if specified
-         const toCheck = name
+         const toCheck = args.name
             ? installed.filter((lib) => {
-               return lib.name === name;
+               return lib.name === args.name;
             })
             : installed;
 
-         if (name && toCheck.length === 0) {
-            spinner.fail(`Library '${name}' is not installed`);
+         if (args.name && toCheck.length === 0) {
+            spinner.fail(`Library '${args.name}' is not installed`);
             process.exit(1);
          }
 
-         // Check for updates
          spinner.text = 'Checking for updates...';
 
-         const updates = await findUpdates(toCheck, client, { force: options.force });
+         const updates = await findUpdates(toCheck, client, { force: flags.force });
 
          spinner.stop();
 
@@ -108,14 +101,13 @@ export const updateCommand = new Command('update')
             return;
          }
 
-         displayUpdates(updates);
+         this.displayUpdates(updates);
 
-         if (options.dryRun) {
+         if (flags['dry-run']) {
             console.log(chalk.yellow('Dry run - no changes made'));
             return;
          }
 
-         // Perform updates
          spinner.start('Updating libraries...');
 
          let updated = 0,
@@ -152,4 +144,28 @@ export const updateCommand = new Command('update')
          console.error(chalk.red(`\nError: ${error instanceof Error ? error.message : String(error)}`));
          process.exit(1);
       }
-   });
+   }
+
+   private displayUpdates(updates: UpdateCandidate[]): void {
+      console.log(chalk.bold('\nUpdates available:'));
+      console.log('');
+
+      for (const update of updates) {
+         const versionChange = update.currentVersion === update.newVersion
+            ? chalk.dim(update.currentVersion)
+            : `${chalk.dim(update.currentVersion)} → ${chalk.green(update.newVersion)}`;
+
+         let contentChange = '';
+
+         if (update.newContentVersion && update.currentContentVersion !== update.newContentVersion) {
+            const current = update.currentContentVersion || 'unknown';
+
+            contentChange = ` (content: ${chalk.dim(current)} → ${chalk.green(update.newContentVersion)})`;
+         }
+
+         console.log(`  ${chalk.bold(update.name)} ${versionChange}${contentChange}`);
+      }
+
+      console.log('');
+   }
+}

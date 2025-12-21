@@ -14,7 +14,7 @@ import { fileURLToPath } from 'url';
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 /** Path to built CLI entry point */
-export const CLI_PATH = path.resolve(currentDir, '../dist/index.js');
+export const CLI_PATH = path.resolve(currentDir, '../bin/run.js');
 
 /** Path to core test fixtures */
 export const FIXTURES_DIR = path.resolve(currentDir, '../../core/src/__tests__/fixtures');
