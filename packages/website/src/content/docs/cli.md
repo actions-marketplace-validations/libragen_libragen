@@ -579,47 +579,30 @@ Use `libragen config` to see current values and which environment variables are 
 
 ---
 
-### `completions`
+### `autocomplete`
 
-Manage shell completions for bash, zsh, and fish.
+Set up shell completions for bash, zsh, and fish.
 
 ```bash
-libragen completions <action>
+libragen autocomplete [SHELL]
 ```
 
-#### Actions
+#### Arguments
 
-| Action | Description |
-|--------|-------------|
-| `install` | Install shell completions (interactive prompt for shell type) |
-| `uninstall` | Remove shell completions |
-| `bash` | Output bash completion script |
-| `zsh` | Output zsh completion script |
-| `fish` | Output fish completion script |
+| Argument | Description |
+|----------|-------------|
+| `SHELL` | Shell type: `bash`, `zsh`, or `fish` (optional) |
 
 #### Examples
 
 ```bash
-# Interactive install (prompts for shell type)
-libragen completions install
+# Display autocomplete installation instructions
+libragen autocomplete
 
-# Output completion script for specific shell
-libragen completions bash
-libragen completions zsh
-libragen completions fish
-
-# Add to your shell profile manually
-# Bash (~/.bashrc):
-eval "$(libragen completions bash)"
-
-# Zsh (~/.zshrc):
-eval "$(libragen completions zsh)"
-
-# Fish (~/.config/fish/completions/libragen.fish):
-libragen completions fish > ~/.config/fish/completions/libragen.fish
-
-# Remove completions
-libragen completions uninstall
+# Set up for specific shell
+libragen autocomplete bash
+libragen autocomplete zsh
+libragen autocomplete fish
 ```
 
 #### Features
@@ -628,8 +611,33 @@ Shell completions provide:
 
 - **Command completion** - Tab-complete all libragen commands
 - **Option completion** - Tab-complete command options
-- **Library name completion** - Tab-complete installed library names for `--library`, `uninstall`, etc.
-- **File completion** - Native file/directory completion for `build`, `install`, `info`
+- **Typo suggestions** - Get suggestions when you mistype a command
+
+---
+
+### `cli-update`
+
+Update the libragen CLI to the latest version.
+
+```bash
+libragen cli-update [options]
+```
+
+#### Options
+
+| Option | Description |
+|--------|-------------|
+| `--check`, `-c` | Check for updates without installing |
+
+#### Examples
+
+```bash
+# Update to latest version
+libragen cli-update
+
+# Check if updates are available
+libragen cli-update --check
+```
 
 ---
 

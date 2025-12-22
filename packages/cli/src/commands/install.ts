@@ -4,71 +4,91 @@
 
 /* eslint-disable no-console, no-process-exit */
 
-import { Command } from 'commander';
+import { Args, Flags } from '@oclif/core';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import ora from 'ora';
 import chalk from 'chalk';
 import { LibraryManager, CollectionClient } from '@libragen/core';
+import { BaseCommand } from '../base-command.ts';
 
-interface InstallOptions {
-   path?: string[];
-   force?: boolean;
-   collection?: string;
-   contentVersion?: string;
-   all?: boolean;
-   select?: boolean;
-}
+export default class Install extends BaseCommand {
+   public static override summary = 'Install a library or collection';
 
-export const installCommand = new Command('install')
-   .description('Install a library or collection')
-   .argument('<source>', 'Library file (.libragen), collection file (.json), or URL')
-   .option('-p, --path <paths...>', 'Project directory (will install to <path>/.libragen/libraries)')
-   .option('-f, --force', 'Overwrite existing libraries')
-   .option('-c, --collection <url>', 'Collection URL to search for library name')
-   .option('--content-version <version>', 'Install specific content version')
-   .option('-a, --all', 'Install all libraries including optional (for collections)')
-   .option('-s, --select', 'Interactively select optional libraries (for collections)')
-   .action(async (source: string, options: InstallOptions) => {
-      const spinner = ora();
+   public static override description = `Install a libragen library from a local file, URL, or collection.
+Supports .libragen files, collection .json files, and packed .libragen-collection archives.`;
+
+   public static override examples = [
+      '<%= config.bin %> <%= command.id %> ./my-docs.libragen',
+      '<%= config.bin %> <%= command.id %> https://example.com/library.libragen',
+      '<%= config.bin %> <%= command.id %> ./collection.json',
+      '<%= config.bin %> <%= command.id %> next.js',
+   ];
+
+   public static override args = {
+      source: Args.string({
+         description: 'Library file (.libragen), collection file (.json), or URL',
+         required: true,
+      }),
+   };
+
+   public static override flags = {
+      path: Flags.string({
+         char: 'p',
+         description: 'Project directory (will install to <path>/.libragen/libraries)',
+         multiple: true,
+      }),
+      force: Flags.boolean({
+         char: 'f',
+         description: 'Overwrite existing libraries',
+         default: false,
+      }),
+      collection: Flags.string({
+         char: 'c',
+         description: 'Collection URL to search for library name',
+      }),
+      'content-version': Flags.string({
+         description: 'Install specific content version',
+      }),
+      all: Flags.boolean({
+         char: 'a',
+         description: 'Install all libraries including optional (for collections)',
+         default: false,
+      }),
+      select: Flags.boolean({
+         char: 's',
+         description: 'Interactively select optional libraries (for collections)',
+         default: false,
+      }),
+   };
+
+   public async run(): Promise<void> {
+      const { args, flags } = await this.parse(Install);
+
+      const spinner = this.createSpinner();
 
       try {
-         // If explicit path provided, transform it to .libragen/libraries subdirectory
-         let managerOptions: { paths: string[] } | undefined;
+         const transformedPaths = this.transformPaths(flags.path);
 
-         if (options.path) {
-            // Transform each path: ./some-folder -> ./some-folder/.libragen/libraries
-            const transformedPaths = options.path.map((p) => {
-               return path.join(p, '.libragen', 'libraries');
-            });
-
-            managerOptions = { paths: transformedPaths };
-         }
+         const managerOptions = transformedPaths ? { paths: transformedPaths } : undefined;
 
          const manager = new LibraryManager(managerOptions);
 
-         // Determine source type
-         const isCollection = manager.isCollection(source),
-               isLibraryFile = source.endsWith('.libragen'),
-               isPackedCollection = source.endsWith('.libragen-collection'),
-               isLocalPath = source.includes(path.sep) || source.startsWith('.'),
-               isURL = source.startsWith('http://') || source.startsWith('https://');
+         const isCollection = manager.isCollection(args.source),
+               isLibraryFile = args.source.endsWith('.libragen'),
+               isPackedCollection = args.source.endsWith('.libragen-collection'),
+               isLocalPath = args.source.includes(path.sep) || args.source.startsWith('.'),
+               isURL = args.source.startsWith('http://') || args.source.startsWith('https://');
 
          if (isPackedCollection) {
-            // Install from packed collection (unpack and install)
-            await installPackedCollection(manager, source, options, spinner);
-         } else if (isCollection || (isURL && source.endsWith('.json'))) {
-            // Install collection
-            await installCollection(manager, source, options, spinner);
+            await this.installPackedCollection(manager, args.source, flags, spinner);
+         } else if (isCollection || (isURL && args.source.endsWith('.json'))) {
+            await this.installCollection(manager, args.source, flags, spinner);
          } else if (isLibraryFile || isLocalPath) {
-            // Install from local library file
-            await installLocalLibrary(manager, source, options, spinner);
+            await this.installLocalLibrary(manager, args.source, flags, spinner);
          } else if (isURL) {
-            // Install from remote library URL
-            await installRemoteLibrary(manager, source, options, spinner);
+            await this.installRemoteLibrary(manager, args.source, flags, spinner);
          } else {
-            // Search in configured collections by name
-            await installFromCollection(source, options, spinner, manager);
+            await this.installFromCollection(args.source, flags, spinner, manager);
          }
 
          console.log('');
@@ -77,262 +97,251 @@ export const installCommand = new Command('install')
          console.error(chalk.red(`\nError: ${error instanceof Error ? error.message : String(error)}`));
          process.exit(1);
       }
-   });
-
-async function installLocalLibrary(
-   manager: LibraryManager,
-   source: string,
-   options: InstallOptions,
-   spinner: ReturnType<typeof ora>
-): Promise<void> {
-   const sourcePath = path.resolve(source);
-
-   try {
-      await fs.access(sourcePath);
-   } catch(_e) {
-      console.error(chalk.red(`Error: File not found: ${sourcePath}`));
-      process.exit(1);
    }
 
-   spinner.start(`Installing from ${sourcePath}...`);
+   private async installLocalLibrary(
+      manager: LibraryManager,
+      source: string,
+      flags: { force: boolean },
+      spinner: ReturnType<typeof import('ora').default>
+   ): Promise<void> {
+      const sourcePath = path.resolve(source);
 
-   const installed = await manager.install(sourcePath, {
-      force: options.force,
-   });
+      try {
+         await fs.access(sourcePath);
+      } catch(_e) {
+         console.error(chalk.red(`Error: File not found: ${sourcePath}`));
+         process.exit(1);
+      }
 
-   spinner.succeed(`Installed ${chalk.bold(installed.name)} v${installed.version}`);
-   console.log(`  ${chalk.dim('Location:')} ${installed.path}`);
-}
+      spinner.start(`Installing from ${sourcePath}...`);
 
-async function installRemoteLibrary(
-   manager: LibraryManager,
-   source: string,
-   options: InstallOptions,
-   spinner: ReturnType<typeof ora>
-): Promise<void> {
-   spinner.start(`Downloading from ${source}...`);
+      const installed = await manager.install(sourcePath, {
+         force: flags.force,
+      });
 
-   // Download to temp file
-   const response = await fetch(source);
-
-   if (!response.ok) {
-      throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+      spinner.succeed(`Installed ${chalk.bold(installed.name)} v${installed.version}`);
+      console.log(`  ${chalk.dim('Location:')} ${installed.path}`);
    }
 
-   const tempPath = path.join(
-      // eslint-disable-next-line no-process-env
-      process.env.TMPDIR || '/tmp',
-      `libragen-download-${Date.now()}.libragen`
-   );
+   private async installRemoteLibrary(
+      manager: LibraryManager,
+      source: string,
+      flags: { force: boolean },
+      spinner: ReturnType<typeof import('ora').default>
+   ): Promise<void> {
+      spinner.start(`Downloading from ${source}...`);
 
-   const buffer = await response.arrayBuffer();
+      const response = await fetch(source);
 
-   await fs.writeFile(tempPath, Buffer.from(buffer));
+      if (!response.ok) {
+         throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+      }
 
-   spinner.text = 'Installing...';
+      const tempPath = path.join(
+         // eslint-disable-next-line no-process-env
+         process.env.TMPDIR || '/tmp',
+         `libragen-download-${Date.now()}.libragen`
+      );
 
-   const installed = await manager.install(tempPath, {
-      force: options.force,
-   });
+      const buffer = await response.arrayBuffer();
 
-   await fs.unlink(tempPath);
+      await fs.writeFile(tempPath, Buffer.from(buffer));
 
-   spinner.succeed(`Installed ${chalk.bold(installed.name)} v${installed.version}`);
-   console.log(`  ${chalk.dim('Location:')} ${installed.path}`);
-}
+      spinner.text = 'Installing...';
 
-async function installCollection(
-   manager: LibraryManager,
-   source: string,
-   options: InstallOptions,
-   spinner: ReturnType<typeof ora>
-): Promise<void> {
-   // Preview collection first
-   spinner.start('Resolving collection...');
+      const installed = await manager.install(tempPath, {
+         force: flags.force,
+      });
 
-   const preview = await manager.previewCollection(source);
+      await fs.unlink(tempPath);
 
-   spinner.stop();
-
-   console.log(chalk.bold('\nCollection contents:'));
-   console.log(`  ${chalk.green('Required:')} ${preview.required.length} libraries`);
-
-   for (const lib of preview.required) {
-      console.log(`    • ${lib.name}`);
+      spinner.succeed(`Installed ${chalk.bold(installed.name)} v${installed.version}`);
+      console.log(`  ${chalk.dim('Location:')} ${installed.path}`);
    }
 
-   if (preview.optional.length > 0) {
-      console.log(`  ${chalk.yellow('Optional:')} ${preview.optional.length} libraries`);
+   private async installCollection(
+      manager: LibraryManager,
+      source: string,
+      flags: { force: boolean; all: boolean; select: boolean },
+      spinner: ReturnType<typeof import('ora').default>
+   ): Promise<void> {
+      spinner.start('Resolving collection...');
 
-      for (const lib of preview.optional) {
+      const preview = await manager.previewCollection(source);
+
+      spinner.stop();
+
+      console.log(chalk.bold('\nCollection contents:'));
+      console.log(`  ${chalk.green('Required:')} ${preview.required.length} libraries`);
+
+      for (const lib of preview.required) {
          console.log(`    • ${lib.name}`);
       }
-   }
 
-   console.log('');
+      if (preview.optional.length > 0) {
+         console.log(`  ${chalk.yellow('Optional:')} ${preview.optional.length} libraries`);
 
-   // Determine which optional libraries to include
-   let selectOptional: string[] | undefined;
-
-   if (options.select && preview.optional.length > 0) {
-      // Interactive selection (simplified - just list them for now)
-      console.log(chalk.dim('Use --all to include all optional libraries'));
-      console.log('');
-   }
-
-   // Install the collection
-   spinner.start('Installing collection...');
-
-   const result = await manager.installCollection(source, {
-      force: options.force,
-      includeOptional: options.all,
-      selectOptional,
-      onProgress: (progress) => {
-         if (progress.libraryName) {
-            spinner.text = `${progress.phase}: ${progress.libraryName} (${progress.current}/${progress.total})`;
-         } else {
-            spinner.text = progress.message || 'Installing...';
+         for (const lib of preview.optional) {
+            console.log(`    • ${lib.name}`);
          }
-      },
-   });
+      }
 
-   spinner.succeed(`Installed collection ${chalk.bold(result.collectionName)}`);
+      console.log('');
 
-   if (result.installed.length > 0) {
-      console.log(`  ${chalk.green('Installed:')} ${result.installed.join(', ')}`);
-   }
+      let selectOptional: string[] | undefined;
 
-   if (result.skipped.length > 0) {
-      console.log(`  ${chalk.yellow('Skipped:')} ${result.skipped.join(', ')} (already installed)`);
-   }
+      if (flags.select && preview.optional.length > 0) {
+         console.log(chalk.dim('Use --all to include all optional libraries'));
+         console.log('');
+      }
 
-   if (result.failed.length > 0) {
-      console.log(`  ${chalk.red('Failed:')}`);
+      spinner.start('Installing collection...');
 
-      for (const f of result.failed) {
-         console.log(`    • ${f.name}: ${f.error}`);
+      const result = await manager.installCollection(source, {
+         force: flags.force,
+         includeOptional: flags.all,
+         selectOptional,
+         onProgress: (progress) => {
+            if (progress.libraryName) {
+               spinner.text = `${progress.phase}: ${progress.libraryName} (${progress.current}/${progress.total})`;
+            } else {
+               spinner.text = progress.message || 'Installing...';
+            }
+         },
+      });
+
+      spinner.succeed(`Installed collection ${chalk.bold(result.collectionName)}`);
+
+      if (result.installed.length > 0) {
+         console.log(`  ${chalk.green('Installed:')} ${result.installed.join(', ')}`);
+      }
+
+      if (result.skipped.length > 0) {
+         console.log(`  ${chalk.yellow('Skipped:')} ${result.skipped.join(', ')} (already installed)`);
+      }
+
+      if (result.failed.length > 0) {
+         console.log(`  ${chalk.red('Failed:')}`);
+
+         for (const f of result.failed) {
+            console.log(`    • ${f.name}: ${f.error}`);
+         }
       }
    }
-}
 
-async function installFromCollection(
-   source: string,
-   options: InstallOptions,
-   spinner: ReturnType<typeof ora>,
-   manager: LibraryManager
-): Promise<void> {
-   // Search in configured collections by name
-   spinner.start('Searching collections...');
+   private async installFromCollection(
+      source: string,
+      flags: { force: boolean; collection?: string },
+      spinner: ReturnType<typeof import('ora').default>,
+      manager: LibraryManager
+   ): Promise<void> {
+      spinner.start('Searching collections...');
 
-   const client = new CollectionClient();
+      const client = new CollectionClient();
 
-   await client.loadConfig();
+      await client.loadConfig();
 
-   // Add custom collection if specified
-   if (options.collection) {
-      await client.addCollection({
-         name: 'custom',
-         url: options.collection,
-         priority: 0,
+      if (flags.collection) {
+         await client.addCollection({
+            name: 'custom',
+            url: flags.collection,
+            priority: 0,
+         });
+      }
+
+      const collections = client.getCollections();
+
+      if (collections.length === 0) {
+         spinner.fail('No collections configured');
+         console.log('');
+         console.log('Add a collection with:');
+         console.log(chalk.cyan('  libragen collection add <name> <url>'));
+         process.exit(1);
+      }
+
+      const entry = await client.getEntry(source);
+
+      if (!entry) {
+         spinner.fail(`Library '${source}' not found in collections`);
+         process.exit(1);
+      }
+
+      spinner.text = `Downloading ${entry.name} v${entry.version}...`;
+
+      const tempPath = path.join(
+         // eslint-disable-next-line no-process-env
+         process.env.TMPDIR || '/tmp',
+         `libragen-download-${Date.now()}.libragen`
+      );
+
+      await client.download(entry, tempPath, {
+         onProgress: (progress: { percent: number }) => {
+            spinner.text = `Downloading ${entry.name}... ${progress.percent.toFixed(0)}%`;
+         },
       });
+
+      spinner.text = 'Installing...';
+
+      const installed = await manager.install(tempPath, {
+         force: flags.force,
+      });
+
+      await fs.unlink(tempPath);
+
+      spinner.succeed(`Installed ${chalk.bold(installed.name)} v${installed.version}`);
+      console.log(`  ${chalk.dim('Location:')} ${installed.path}`);
+
+      if (installed.contentVersion) {
+         console.log(`  ${chalk.dim('Content:')} ${installed.contentVersion}`);
+      }
    }
 
-   const collections = client.getCollections();
+   private async installPackedCollection(
+      manager: LibraryManager,
+      source: string,
+      flags: { force: boolean; all: boolean; select: boolean },
+      spinner: ReturnType<typeof import('ora').default>
+   ): Promise<void> {
+      const sourcePath = path.resolve(source);
 
-   if (collections.length === 0) {
-      spinner.fail('No collections configured');
-      console.log('');
-      console.log('Add a collection with:');
-      console.log(chalk.cyan('  libragen collection add <name> <url>'));
-      process.exit(1);
-   }
+      try {
+         await fs.access(sourcePath);
+      } catch(_e) {
+         console.error(chalk.red(`Error: File not found: ${sourcePath}`));
+         process.exit(1);
+      }
 
-   const entry = await client.getEntry(source);
+      spinner.start('Extracting packed collection...');
 
-   if (!entry) {
-      spinner.fail(`Library '${source}' not found in collections`);
-      process.exit(1);
-   }
+      const tar = await import('tar');
 
-   spinner.text = `Downloading ${entry.name} v${entry.version}...`;
+      const tempDir = path.join(
+         // eslint-disable-next-line no-process-env
+         process.env.TMPDIR || '/tmp',
+         `libragen-install-${Date.now()}`
+      );
 
-   const tempPath = path.join(
-      // eslint-disable-next-line no-process-env
-      process.env.TMPDIR || '/tmp',
-      `libragen-download-${Date.now()}.libragen`
-   );
+      await fs.mkdir(tempDir, { recursive: true });
 
-   await client.download(entry, tempPath, {
-      onProgress: (progress: { percent: number }) => {
-         spinner.text = `Downloading ${entry.name}... ${progress.percent.toFixed(0)}%`;
-      },
-   });
+      await tar.extract({
+         file: sourcePath,
+         cwd: tempDir,
+      });
 
-   spinner.text = 'Installing...';
+      spinner.succeed('Extracted');
 
-   const installed = await manager.install(tempPath, {
-      force: options.force,
-   });
+      const collectionPath = path.join(tempDir, 'collection.json');
 
-   await fs.unlink(tempPath);
+      try {
+         await fs.access(collectionPath);
+      } catch(_e) {
+         await fs.rm(tempDir, { recursive: true });
+         throw new Error('Invalid packed collection: missing collection.json');
+      }
 
-   spinner.succeed(`Installed ${chalk.bold(installed.name)} v${installed.version}`);
-   console.log(`  ${chalk.dim('Location:')} ${installed.path}`);
+      await this.installCollection(manager, collectionPath, flags, spinner);
 
-   if (installed.contentVersion) {
-      console.log(`  ${chalk.dim('Content:')} ${installed.contentVersion}`);
-   }
-}
-
-async function installPackedCollection(
-   manager: LibraryManager,
-   source: string,
-   options: InstallOptions,
-   spinner: ReturnType<typeof ora>
-): Promise<void> {
-   const sourcePath = path.resolve(source);
-
-   try {
-      await fs.access(sourcePath);
-   } catch(_e) {
-      console.error(chalk.red(`Error: File not found: ${sourcePath}`));
-      process.exit(1);
-   }
-
-   spinner.start('Extracting packed collection...');
-
-   // Import tar dynamically
-   const tar = await import('tar');
-
-   // Create temp directory for extraction
-   const tempDir = path.join(
-      process.env.TMPDIR || '/tmp',
-      `libragen-install-${Date.now()}`
-   );
-
-   await fs.mkdir(tempDir, { recursive: true });
-
-   // Extract the archive
-   await tar.extract({
-      file: sourcePath,
-      cwd: tempDir,
-   });
-
-   spinner.succeed('Extracted');
-
-   // Find and install the collection
-   const collectionPath = path.join(tempDir, 'collection.json');
-
-   try {
-      await fs.access(collectionPath);
-   } catch(_e) {
       await fs.rm(tempDir, { recursive: true });
-      throw new Error('Invalid packed collection: missing collection.json');
    }
-
-   // Install the collection from the extracted directory
-   await installCollection(manager, collectionPath, options, spinner);
-
-   // Cleanup temp directory
-   await fs.rm(tempDir, { recursive: true });
 }

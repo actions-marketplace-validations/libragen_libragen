@@ -91,7 +91,8 @@ libragen update --dry-run
 | [`update`](https://libragen.dev/docs/cli#update) | Update libraries from collections |
 | [`collection`](https://libragen.dev/docs/cli#collection) | Create and manage collections |
 | [`config`](https://libragen.dev/docs/cli#config) | Display configuration and paths |
-| [`completions`](https://libragen.dev/docs/cli#completions) | Manage shell completions |
+| [`autocomplete`](https://libragen.dev/docs/cli#autocomplete) | Set up shell completions |
+| [`cli-update`](https://libragen.dev/docs/cli#cli-update) | Update the CLI to the latest version |
 
 ## Related
 

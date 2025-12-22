@@ -4,7 +4,7 @@
 
 /* eslint-disable no-console, no-process-env */
 
-import { Command } from 'commander';
+import { Flags } from '@oclif/core';
 import chalk from 'chalk';
 import {
    getLibragenHome,
@@ -14,28 +14,39 @@ import {
    hasProjectLibraryDir,
    VERSION,
 } from '@libragen/core';
+import { BaseCommand } from '../base-command.ts';
 
-interface ConfigOptions {
-   json?: boolean;
-}
+export default class Config extends BaseCommand {
+   public static override summary = 'Display current libragen configuration and paths';
 
-export const configCommand = new Command('config')
-   .description('Display current libragen configuration and paths')
-   .option('--json', 'Output as JSON')
-   .action(async (options: ConfigOptions) => {
+   public static override description = `Show configuration details including library paths, model cache location,
+and environment variable settings.`;
+
+   public static override examples = [
+      '<%= config.bin %> <%= command.id %>',
+      '<%= config.bin %> <%= command.id %> --json',
+   ];
+
+   public static override flags = {
+      json: Flags.boolean({
+         description: 'Output as JSON',
+         default: false,
+      }),
+   };
+
+   public async run(): Promise<void> {
+      const { flags } = await this.parse(Config);
+
       const home = getLibragenHome(),
             libraryDir = getDefaultLibraryDir(),
             modelCacheDir = getModelCacheDir();
 
-      // Check which values are from env vars
       const homeFromEnv = !!process.env.LIBRAGEN_HOME,
             modelCacheFromEnv = !!process.env.LIBRAGEN_MODEL_CACHE;
 
-      // Check for project-local .libragen/libraries
       const projectLibDir = detectProjectLibraryDir(),
             hasProjectLib = projectLibDir ? await hasProjectLibraryDir() : false;
 
-      // Build list of active library paths (in priority order)
       const activePaths: Array<{ path: string; type: 'project' | 'global' }> = [];
 
       if (hasProjectLib && projectLibDir) {
@@ -58,7 +69,7 @@ export const configCommand = new Command('config')
          },
       };
 
-      if (options.json) {
+      if (flags.json) {
          console.log(JSON.stringify(config, null, 2));
          return;
       }
@@ -100,4 +111,5 @@ export const configCommand = new Command('config')
       }
 
       console.log('');
-   });
+   }
+}
